@@ -1,0 +1,63 @@
+\documentclass[10pt]{article}
+\usepackage[cm]{fullpage}
+\usepackage{longtable}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{color}
+\usepackage{xspace}
+\usepackage{xargs}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{txfonts}
+\usepackage{proof}
+\usepackage{mdframed}
+\usepackage{multirow}
+\usepackage{stmaryrd}
+
+\newcommand{\alt}{\ \mid\ }
+\newcommand{\lalt}{\ \ \ \alt}
+\newcommand{\mtt}[1]{\ensuremath{\mathit{#1}}}
+\newcommand{\anywhere}[1]{\ensuremath{\mbox{#1}}}
+\newcommand{\kw}[1]{\anywhere{\sffamily{\bfseries\small {#1}}}}
+\newcommand{\term}{\ensuremath{\mtt{term}}\xspace}
+\newcommand{\atom}{\ensuremath{\mtt{atom}}\xspace}
+\newcommand{\name}{\ensuremath{\mtt{name}}\xspace}
+\newcommand{\datadef}{\ensuremath{\mtt{datadef}}\xspace}
+
+\begin{document}
+
+\title{Basic Prolog Type System}
+\author{}
+\date{}
+
+\maketitle
+
+\section{Syntax}
+
+\begin{gather*}
+  x \in \mtt{Variable} \qquad n \in \mathbb{Z} \qquad \atom \in \mtt{Atom} \qquad T \in \mtt{TypeVariable} \qquad \name \in \mtt{Name}
+\end{gather*}
+
+\begin{align*}
+  p \in \mtt{Program} &::= \vec{c}
+  \\
+  \datadef \in \mtt{DataDefinition} &::= \kw{data}\; \name[\vec{T}] = \overrightarrow{\name_i(\vec{\tau})}
+  \\
+  s \in \mtt{Structure} &::= \atom(\vec{t})
+  \\
+  \term \in \mtt{Term} &::= \atom \alt n \alt s \alt \lambda
+  \\
+  \lambda \in \mtt{Lambda} &::= \kw{lambda}\;\vec{\term}\;b
+  \\
+  c \in \mtt{Clause} &::= \name[\vec{T}] : \vec{\tau} = \overrightarrow{\name(\overrightarrow{\term}) \Leftarrow b.}
+  \\
+  b \in \mtt{Body} &::= b_1 \land b_2 \alt b_2 \lor b_2
+  \alt \kw{call}\;s \alt \term_1 \equiv \term_2
+\end{align*}
+
+\section{Typing Rules}
+\begin{align*}
+  \tau \in \mtt{Type} &= \kw{int} \alt \name[\vec{\tau}] \alt T \alt \kw{relation}(\vec{\tau})
+\end{align*}
+
+\end{document}
