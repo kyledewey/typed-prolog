@@ -1,3 +1,5 @@
+:- module('sanitizer', [ensureProgram/3, bodyPairForm/3, bodyAtomForm/1]).
+
 % The syntax we consider is more restrictive than everything in Prolog.
 % Most importantly, we have a distinction between code and data, with
 % lambdas being a well-defined intermediary between the two.  In this module,
@@ -26,44 +28,55 @@ ensureTerm(ClauseDefNameArity, Lambda) :-
         !,
         ensureTerms(ClauseDefNameArity, Params),
         ensureBody(ClauseDefNameArity, Body).
-ensureTerm(_, Structure) :-
+ensureTerm(ClauseDefNameArity, Structure) :-
         !,
-        ensureStructure(Structure).
-
-% -Structure
-ensureStructure(Structure) :-
         Contents = [_|_],
         Structure =.. [_|Contents],
-        ensureTerms(Contents).
+        ensureTerms(ClauseDefNameArity, Contents).
+
+% -InputBody: Body
+% -B1:        Body
+% -B2:        Body
+%
+% Tests if the input is a "pair form", like conjunction and disjunction.
+% If so, it will unify `B1` and `B2` with the members of the pair.  This
+% is here to avoid lots of repitition; these forms behave similarly across
+% the board.
+bodyPairForm(InputBody, B1, B2) :-
+        InputBody =.. [Name, B1, B2],
+        member(Name, [',', ';', '->']).
+
+% -InputBody: Body
+%
+% Succeeds if it's an atom form, like true or false
+bodyAtomForm(InputBody) :-
+        atom(InputBody),
+        member(InputBody, [true, fail, false]).
 
 % -ClauseDefNameArity: [pair(Name, Arity)]
 % -Body: Body
-ensureBody(ClauseDefNameArity, (B1, B2)) :-
-        !,
-        ensureBody(ClauseDefNameArity, B1),
-        ensureBody(ClauseDefNameArity, B2).
-ensureBody(ClauseDefNameArity, (B1; B2)) :-
+ensureBody(_, AtomForm) :-
+        bodyAtomForm(AtomForm),
+        !.
+ensureBody(ClauseDefNameArity, PairForm) :-
+        bodyPairForm(PairForm, B1, B2),
         !,
         ensureBody(ClauseDefNameArity, B1),
         ensureBody(ClauseDefNameArity, B2).
 ensureBody(ClauseDefNameArity, =(T1, T2)) :-
         !,
         ensureTerms(ClauseDefNameArity, [T1, T2]).
-ensureBody(ClauseDefNameArity, ->(B1, B2)) :-
-        !,
-        ensureBody(ClauseDefNameArity, B1),
-        ensureBody(ClauseDefNameArity, B2).
 ensureBody(ClauseDefNameArity, HigherOrderCall) :-
-        !,
         HigherOrderCall =.. [call|Params],
+        !,
         ensureTerms(ClauseDefNameArity, Params).
 ensureBody(ClauseDefNameArity, FirstOrderCall) :-
-        !,
         FirstOrderCall =.. [Name|Params],
         atom(Name),
+        !,
         length(Params, Arity),
         member(pair(Name, Arity), ClauseDefNameArity),
-        ensureTerms(Params).
+        ensureTerms(ClauseDefNameArity, Params).
 
 % like member, except it uses == instead of =
 memberEqual(A, [H|T]) :-
@@ -85,16 +98,17 @@ ensureTypes(Types, TypeVarsInScope, DataDefNamesArity) :-
 % -Type
 % -TypeVarsInScope:   [TypeVar]
 % -DataDefNamesArity: [pair(Name, Arity)]
-ensureType(int, _, _) :- !.
-ensureType(relation(Types), TypeVarsInScope, DataDefNamesArity) :-
-        !,
-        ensureTypes(Types, TypeVarsInScope, DataDefNamesArity).
 ensureType(TypeVar, TypeVarsInScope, _) :-
         var(TypeVar),
         !,
         memberEqual(TypeVar, TypeVarsInScope).
+ensureType(int, _, _) :- !.
+ensureType(Relation, TypeVarsInScope, DataDefNamesArity) :-
+        Relation =.. [relation|Types],
+        !,
+        ensureTypes(Types, TypeVarsInScope, DataDefNamesArity).
 ensureType(ConstructorType, TypeVarsInScope, DataDefNamesArity) :-
-        ConstructorType =.. [Name, Types],
+        ConstructorType =.. [Name|Types],
         !,
         length(Types, Arity),
         member(pair(Name, Arity), DataDefNamesArity),
@@ -216,8 +230,8 @@ ensureClause(ClauseDefNameArity, :-(Head, Body)) :-
         atom(Name),
         length(Params, Arity),
         member(pair(Name, Arity), ClauseDefNameArity),
-        ensureTerms(Params),
-        ensureBody(Body).
+        ensureTerms(ClauseDefNameArity, Params),
+        ensureBody(ClauseDefNameArity, Body).
 
 % -DataDefs:   [DataDef]
 % -ClauseDefs: [ClauseDef]
@@ -226,5 +240,5 @@ ensureProgram(DataDefs, ClauseDefs, Clauses) :-
         dataDefNamesArity(DataDefs, DataDefNamesArity),
         clauseDefNamesArity(ClauseDefs, ClauseDefNamesArity),
         ensureDataDefs(DataDefs, DataDefNamesArity),
-        ensureClauseDefs(DataDefs, ClauseDefs),
+        ensureClauseDefs(DataDefNamesArity, ClauseDefs),
         maplist(ensureClause(ClauseDefNamesArity), Clauses).
