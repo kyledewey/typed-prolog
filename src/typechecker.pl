@@ -59,8 +59,8 @@ getDataDef(DataDefs, ConstructorName, DataDef) :-
 %
 % Will introduce fresh type variables.
 getClauseDefExpectedTypes(ClauseDefs, ClauseName, ClauseArity, Expected) :-
-        member(pair(pair(ClauseName, ClauseArity), RawClauseDef), ClauseDefs),
-        copy_term(RawClauseDef, clausedef(_, _, Expected)).
+        member(pair(pair(ClauseName, ClauseArity),
+                    clausedef(_, _, Expected)), ClauseDefs).
 
 % -DataDefAlternatives: [Alternative]
 % -ConstructorName:     Name
@@ -80,17 +80,40 @@ sameLength([_|T1], [_|T2]) :-
 
 % -DataDefMapping:   [pair(Name, DataDef)]
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]
+% -TypeEnv:          [pair(Variable, Type)]
 % -ConstructorName:  Name
 % -ConstructorArgs:  [Term]
 % -Type:             type([Type])
-constructorType(DataDefs, ClauseDefs, ConstructorName,
-                ConstructorArgs, Type) :-
+% -NewTypeEnv:       [pair(Variable, Type)]
+constructorType(DataDefs, ClauseDefs, TypeEnv, ConstructorName,
+                ConstructorArgs, Type, NewTypeEnv) :-
         getDataDef(DataDefs, ConstructorName,
                    datadef(TypeName, TypeParams, Alternatives)),
         dataDefAlternative(Alternatives, ConstructorName, Alternative),
         Alternative =.. [_|ExpectedTypes],
-        typeofTerms(DataDefs, ClauseDefs, ConstructorArgs, ExpectedTypes),
+        typeofTerms(DataDefs, ClauseDefs, TypeEnv,
+                    ConstructorArgs, ExpectedTypes, NewTypeEnv),
         Type =.. [TypeName|TypeParams].
+
+% ---TypeEnv: [pair(Variable, Type)]---
+% ONLY interact with type environment though envVariableType.
+% Variables are uninstantiated, and we want to keep them that way.
+
+% -TypeEnv:    [pair(Variable, Type)]
+% -Variable:   Variable, should be uninstantiated
+% -Type:       Type
+% -NewTypeEnv: [pair(Variable, Type)]
+%
+% Gets the type of the variable in the type environment.  If the
+% variable doesn't exist in the type environment, it will add it to
+% the type environment.
+envVariableType([], Variable, Type, [pair(Variable, Type)]) :- !.
+envVariableType(Found, Variable, Type, Found) :-
+        Found = [pair(EnvVariable, Type)|_],
+        EnvVariable == Variable,
+        !.
+envVariableType([H|T], Variable, Type, [H|Rest]) :-
+        envVariableType(T, Variable, Type, Rest).
 
 % ---DataDefMapping: [pair(Name, DataDef)]---
 % Maps constructor names to their corresponding data defs
@@ -100,72 +123,85 @@ constructorType(DataDefs, ClauseDefs, ConstructorName,
 
 % -DataDefMapping:   [pair(Name, DataDef)]
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]
+% -TypeEnv:          [pair(Variable, Type)]
 % -Terms:            [Term]
 % -Types:            [Type]
-typeofTerms(DataDefs, ClauseDefs, Terms, Types) :-
-        sameLength(Terms, Types),
-        maplist(typeofTerm(DataDefs, ClauseDefs), Terms, Types).
+% -NewTypeEnv:       [pair(Variable, Type)]
+%
+% Only succeeds if the terms and types are of the same length
+typeofTerms(_, _, TypeEnv, [], [], TypeEnv).
+typeofTerms(DataDefs, ClauseDefs, TypeEnv,
+            [HTerm|Terms], [HType|Types], NewTypeEnv) :-
+        typeofTerm(DataDefs, ClauseDefs, TypeEnv,
+                   HTerm, HType, TempTypeEnv),
+        typeofTerms(DataDefs, ClauseDefs, TempTypeEnv,
+                    Terms, Types, NewTypeEnv).
 
 % -DataDefMapping:   [pair(Name, DataDef)]
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]
+% -TypeEnv:          [pair(Variable, Type)]
 % -Term:             Term
 % -Type:             Type
-typeofTerm(_, _, X, Type) :-
+% -NewTypeEnv:       [pair(Variable, Type)]
+typeofTerm(_, _, TypeEnv, X, Type, NewTypeEnv) :-
         var(X),
         !,
-        % bind variables directly to their types.  The reason for
-        % delaying this unification is that we want to explicitly
-        % check first that X is uninstantiated.  In the event that
-        % Type is instantiated, then the var check would fail.
-        X = Type.
-typeofTerm(DataDefs, ClauseDefs, Atom, Type) :-
+        envVariableType(TypeEnv, X, Type, NewTypeEnv).
+typeofTerm(DataDefs, ClauseDefs, TypeEnv, Atom, Type, NewTypeEnv) :-
         atom(Atom),
         !,
-        constructorType(DataDefs, ClauseDefs, Atom, [], Type).
-typeofTerm(_, _, N, int) :-
+        constructorType(DataDefs, ClauseDefs, TypeEnv,
+                        Atom, [], Type, NewTypeEnv).
+typeofTerm(_, _, TypeEnv, N, int, TypeEnv) :-
         number(N),
         !.
-typeofTerm(DataDefs, ClauseDefs, Lambda, Relation) :-
+typeofTerm(DataDefs, ClauseDefs, TypeEnv, Lambda, Relation, NewTypeEnv) :-
         Lambda =.. [lambda, Params, Body],
         !,
-        typecheckBody(DataDefs, ClauseDefs, Body),
-        maplist(typeofTerm(DataDefs, ClauseDefs), Params, Types),
+        typecheckBody(DataDefs, ClauseDefs, TypeEnv, Body, TempTypeEnv),
+        typeofTerms(DataDefs, ClauseDefs, TempTypeEnv,
+                    Params, Types, NewTypeEnv),
         Relation =.. [relation|Types].
-typeofTerm(DataDefs, ClauseDefs, Structure, Type) :-
+typeofTerm(DataDefs, ClauseDefs, TypeEnv, Structure, Type, NewTypeEnv) :-
         Structure =.. [ConstructorName|Params],
         !,
-        constructorType(DataDefs, ClauseDefs, ConstructorName,
-                        Params, Type).
+        constructorType(DataDefs, ClauseDefs, TypeEnv, ConstructorName,
+                        Params, Type, NewTypeEnv).
 
 % -DataDefMapping:   [pair(Name, DataDef)]
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]
+% -TypeEnv:          [pair(Variable, Type)]
 % -Body:             Body
+% -NewTypeEnv:       [pair(Variable, Type)]
 %
-% Since bodies don't return anything, there is no return type.
-typecheckBody(_, _, AtomForm) :-
+% Since bodies don't return anything, there is no associated return type.
+typecheckBody(_, _, TypeEnv, AtomForm, TypeEnv) :-
         bodyAtomForm(AtomForm),
         !.
-typecheckBody(DataDefs, ClauseDefs, PairForm) :-
+typecheckBody(DataDefs, ClauseDefs, TypeEnv, PairForm, NewTypeEnv) :-
         bodyPairForm(PairForm, B1, B2),
         !,
-        typecheckBody(DataDefs, ClauseDefs, B1),
-        typecheckBody(DataDefs, ClauseDefs, B2).
-typecheckBody(DataDefs, ClauseDefs, =(T1, T2)) :-
+        typecheckBody(DataDefs, ClauseDefs, TypeEnv, B1, TempTypeEnv),
+        typecheckBody(DataDefs, ClauseDefs, TempTypeEnv, B2, NewTypeEnv).
+typecheckBody(DataDefs, ClauseDefs, TypeEnv, =(T1, T2), NewTypeEnv) :-
         !,
-        typeofTerm(DataDefs, ClauseDefs, T1, Type),
-        typeofTerm(DataDefs, ClauseDefs, T2, Type).
-typecheckBody(DataDefs, ClauseDefs, HigherOrderCall) :-
+        typeofTerm(DataDefs, ClauseDefs, TypeEnv, T1, Type, TempTypeEnv),
+        typeofTerm(DataDefs, ClauseDefs, TempTypeEnv, T2, Type, NewTypeEnv).
+typecheckBody(DataDefs, ClauseDefs, TypeEnv, HigherOrderCall, NewTypeEnv) :-
         HigherOrderCall =.. [call, Relation|Params],
         !,
-        typeofTerm(DataDefs, ClauseDefs, Relation, RelationType),
+        typeofTerm(DataDefs, ClauseDefs, TypeEnv, Relation,
+                   RelationType, TempTypeEnv),
         RelationType =.. [relation|ExpectedTypes],
-        typeofTerms(DataDefs, ClauseDefs, Params, ExpectedTypes).
-typecheckBody(DataDefs, ClauseDefs, FirstOrderCall) :-
+        typeofTerms(DataDefs, ClauseDefs, TempTypeEnv,
+                    Params, ExpectedTypes, NewTypeEnv).
+typecheckBody(DataDefs, ClauseDefs, TypeEnv, FirstOrderCall, NewTypeEnv) :-
         FirstOrderCall =.. [Name|Params],
         !,
         length(Params, Arity),
         getClauseDefExpectedTypes(ClauseDefs, Name, Arity, ExpectedTypes),
-        typeofTerms(DataDefs, ClauseDefs, Params, ExpectedTypes).
+        typeofTerms(DataDefs, ClauseDefs, TypeEnv,
+                    Params, ExpectedTypes, NewTypeEnv).
 
 % -DataDefMapping:   [pair(Name, DataDef)]
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]
@@ -175,8 +211,8 @@ typecheckClause(DataDefs, ClauseDefs, RawClause) :-
         Head =.. [Name|Params],
         length(Params, Arity),
         getClauseDefExpectedTypes(ClauseDefs, Name, Arity, Expected),
-        typeofTerms(DataDefs, ClauseDefs, Params, Expected),
-        typecheckBody(DataDefs, ClauseDefs, Body).
+        typeofTerms(DataDefs, ClauseDefs, [], Params, Expected, TypeEnv),
+        typecheckBody(DataDefs, ClauseDefs, TypeEnv, Body, _).
 
 % -DataDefMapping:   [pair(Name, DataDef)]
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]
