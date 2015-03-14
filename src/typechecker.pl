@@ -115,6 +115,13 @@ envVariableType(Found, Variable, Type, Found) :-
 envVariableType([H|T], Variable, Type, [H|Rest]) :-
         envVariableType(T, Variable, Type, Rest).
 
+% -Variable:   Variable, should be uninstantiated
+% -Type:       Type
+% -TypeEnv:    [pair(Variable, Type)]
+% -NewTypeEnv: [pair(Variable, Type)]
+envVariableType_(Variable, Type, TypeEnv, NewTypeEnv) :-
+        envVariableType(TypeEnv, Variable, Type, NewTypeEnv).
+
 % ---DataDefMapping: [pair(Name, DataDef)]---
 % Maps constructor names to their corresponding data defs
 %
@@ -178,6 +185,14 @@ typeofTerm(DataDefs, ClauseDefs, TypeEnv, Structure, Type, NewTypeEnv) :-
 typecheckBody(_, _, TypeEnv, AtomForm, TypeEnv) :-
         bodyAtomForm(AtomForm),
         !.
+typecheckBody(_, _, TypeEnv, is(VarOrNum, ArithExp), NewTypeEnv) :-
+        !,
+        term_variables(VarOrNum, Variables, Temp),
+        term_variables(ArithExp, Temp),
+        length(Variables, NumVariables),
+        length(IntTypes, NumVariables),
+        maplist(=(int), IntTypes),
+        foldl(envVariableType_, Variables, IntTypes, TypeEnv, NewTypeEnv).
 typecheckBody(DataDefs, ClauseDefs, TypeEnv, PairForm, NewTypeEnv) :-
         bodyPairForm(PairForm, B1, B2),
         !,

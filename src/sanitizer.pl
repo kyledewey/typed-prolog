@@ -53,11 +53,30 @@ bodyAtomForm(InputBody) :-
         atom(InputBody),
         member(InputBody, [true, fail, false]).
 
+%    e \in Exp ::= n | x | e_1 op e_2
+% op \in Binop ::= + | - | * | / | min | max
+ensureArithExp(N) :-
+        number(N),
+        !.
+ensureArithExp(X) :-
+        var(X),
+        !.
+ensureArithExp(Binop) :-
+        Binop =.. [Op, E1, E2],
+        atom(Op),
+        member(Op, ['+', '-', '*', '/', 'min', 'max']),
+        ensureArithExp(E1),
+        ensureArithExp(E2).
+
 % -ClauseDefNameArity: [pair(Name, Arity)]
 % -Body: Body
 ensureBody(_, AtomForm) :-
         bodyAtomForm(AtomForm),
         !.
+ensureBody(_, is(VarOrNum, Exp)) :-
+        !,
+        (var(VarOrNum); number(VarOrNum)),
+        ensureArithExp(Exp).
 ensureBody(ClauseDefNameArity, PairForm) :-
         bodyPairForm(PairForm, B1, B2),
         !,
