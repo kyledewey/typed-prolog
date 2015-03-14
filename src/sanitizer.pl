@@ -1,55 +1,69 @@
 % The syntax we consider is more restrictive than everything in Prolog.
 % Most importantly, we have a distinction between code and data, with
-% lambdas being a well-defined intermediary between the two.  These
-% added restrictions prevent us from using code directly as data, so
-% we can actually typecheck things.
+% lambdas being a well-defined intermediary between the two.  In this module,
+% we make sure that things are syntactically well-formed.  We also check
+% that at the very least, we have calls with the appropriate name/arity,
+% which we can check cheaply here with information we need to gather anyway.
 
-ensureTerms(Terms) :-
-        maplist(ensureTerm, Terms).
+% -ClauseDefNameArity: [pair(Name, Arity)]
+% -Terms:              [Term]
+ensureTerms(ClauseDefNameArity, Terms) :-
+        maplist(ensureTerm(ClauseDefNameArity), Terms).
 
-ensureTerm(Var) :-
+% -ClauseDefNameArity: [pair(Name, Arity)]
+% -Term:               Term
+ensureTerm(_, Var) :-
         var(Var),
         !.
-ensureTerm(Atom) :-
+ensureTerm(_, Atom) :-
         atom(Atom),
         !.
-ensureTerm(Int) :-
+ensureTerm(_, Int) :-
         number(Int),
         !.
-ensureTerm(Lambda) :-
+ensureTerm(ClauseDefNameArity, Lambda) :-
         Lambda =.. [lambda, Params, Body],
         !,
-        ensureTerms(Params),
-        ensureBody(Body).
-ensureTerm(Structure) :-
+        ensureTerms(ClauseDefNameArity, Params),
+        ensureBody(ClauseDefNameArity, Body).
+ensureTerm(_, Structure) :-
         !,
         ensureStructure(Structure).
 
+% -Structure
 ensureStructure(Structure) :-
         Contents = [_|_],
         Structure =.. [_|Contents],
         ensureTerms(Contents).
 
-ensureBody((B1, B2)) :-
+% -ClauseDefNameArity: [pair(Name, Arity)]
+% -Body: Body
+ensureBody(ClauseDefNameArity, (B1, B2)) :-
         !,
-        ensureBody(B1),
-        ensureBody(B2).
-ensureBody((B1; B2)) :-
+        ensureBody(ClauseDefNameArity, B1),
+        ensureBody(ClauseDefNameArity, B2).
+ensureBody(ClauseDefNameArity, (B1; B2)) :-
         !,
-        ensureBody(B1),
-        ensureBody(B2).
-ensureBody(=(T1, T2)) :-
+        ensureBody(ClauseDefNameArity, B1),
+        ensureBody(ClauseDefNameArity, B2).
+ensureBody(ClauseDefNameArity, =(T1, T2)) :-
         !,
-        ensureTerms([T1, T2]).
-ensureBody(->(B1, B2)) :-
+        ensureTerms(ClauseDefNameArity, [T1, T2]).
+ensureBody(ClauseDefNameArity, ->(B1, B2)) :-
         !,
-        ensureBody(B1),
-        ensureBody(B2).
-ensureBody(Call) :-
+        ensureBody(ClauseDefNameArity, B1),
+        ensureBody(ClauseDefNameArity, B2).
+ensureBody(ClauseDefNameArity, HigherOrderCall) :-
         !,
-        (atom(Call) ->
-            true;
-            ensureStructure(Call)).
+        HigherOrderCall =.. [call|Params],
+        ensureTerms(ClauseDefNameArity, Params).
+ensureBody(ClauseDefNameArity, FirstOrderCall) :-
+        !,
+        FirstOrderCall =.. [Name|Params],
+        atom(Name),
+        length(Params, Arity),
+        member(pair(Name, Arity), ClauseDefNameArity),
+        ensureTerms(Params).
 
 % like member, except it uses == instead of =
 memberEqual(A, [H|T]) :-
