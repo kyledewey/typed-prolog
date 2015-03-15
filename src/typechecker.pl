@@ -289,10 +289,14 @@ normalizeClause(:-(Head, Body), :-(Head, Body)) :- !.
 normalizeClause(Clause, :-(Clause, true)).
 
 builtinDataDef(datadef(list, [A], [.(A, list(A)), []])).
-builtinClauseDef(clausedef(>, [], [int, int])).
 
 builtinDataDefs(DataDefs) :-
         findall(D, builtinDataDef(D), DataDefs).
+
+builtinClauseDef(clausedef(>, [], [int, int])).
+builtinClauseDef(clausedef(<, [], [int, int])).
+builtinClauseDef(clausedef(=<, [], [int, int])).
+builtinClauseDef(clausedef(>=, [], [int, int])).
 
 builtinClauseDefs(ClauseDefs) :-
         findall(C, builtinClauseDef(C), ClauseDefs).

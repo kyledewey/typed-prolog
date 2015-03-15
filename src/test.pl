@@ -21,6 +21,10 @@ test :-
         call(X),
         A = [].
 
+clausedef(compare, [], [int, int]).
+compare(X, Y) :-
+        X =< Y.
+
 %% call_lambda0(lambda0_0) :-
 %%         A is 1.
 
