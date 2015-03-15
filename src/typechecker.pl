@@ -72,12 +72,6 @@ dataDefAlternative([_|T], ConstructorName, Alternative) :-
         dataDefAlternative(T, ConstructorName, Alternative),
         !.
 
-% -List1: [A]
-% -List2: [B]
-sameLength([], []).
-sameLength([_|T1], [_|T2]) :-
-        sameLength(T1, T2).
-
 % -DataDefMapping:   [pair(Name, DataDef)]
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]
 % -TypeEnv:          [pair(Variable, Type)]
@@ -96,7 +90,7 @@ constructorType(DataDefs, ClauseDefs, TypeEnv, ConstructorName,
         Type =.. [TypeName|TypeParams].
 
 % ---TypeEnv: [pair(Variable, Type)]---
-% ONLY interact with type environment though envVariableType.
+% ONLY interact with type environment though `envVariableType`.
 % Variables are uninstantiated, and we want to keep them that way.
 
 % -TypeEnv:    [pair(Variable, Type)]
@@ -121,6 +115,31 @@ envVariableType([H|T], Variable, Type, [H|Rest]) :-
 % -NewTypeEnv: [pair(Variable, Type)]
 envVariableType_(Variable, Type, TypeEnv, NewTypeEnv) :-
         envVariableType(TypeEnv, Variable, Type, NewTypeEnv).
+
+% -TypeEnv:  [pair(Variable, Type)]
+% -Variable: Variable
+%
+% Succeeds if the given type environment contains the given variable.
+envContainsVar([pair(EnvVariable, _)|_], Variable) :-
+        EnvVariable == Variable,
+        !.
+envContainsVar([_|T], Variable) :-
+        envContainsVar(T, Variable).
+
+% -AfterCallTypeEnv:  [pair(Variable, Type)]
+% -BeforeCallTypeEnv: [pair(Variable, Type)]
+% -ResultTypeEnv:     [pair(Variable, Type)]
+%
+% Will subtract any new variables added, but will not subtract
+% additional type information learned.
+afterBeforeCallTypeEnvs([], _, []) :- !.
+afterBeforeCallTypeEnvs([H|T], Before, [H|Rest]) :-
+        H = pair(Variable, _),
+        envContainsVar(Before, Variable),
+        !,
+        afterBeforeCallTypeEnvs(T, Before, Rest).
+afterBeforeCallTypeEnvs([_|T], Before, Rest) :-
+        afterBeforeCallTypeEnvs(T, Before, Rest).
 
 % ---DataDefMapping: [pair(Name, DataDef)]---
 % Maps constructor names to their corresponding data defs
@@ -167,8 +186,15 @@ typeofTerm(DataDefs, ClauseDefs, TypeEnv, Lambda, Relation, NewTypeEnv) :-
         !,
         typecheckBody(DataDefs, ClauseDefs, TypeEnv, Body, TempTypeEnv),
         typeofTerms(DataDefs, ClauseDefs, TempTypeEnv,
-                    Params, Types, NewTypeEnv),
-        Relation =.. [relation|Types].
+                    Params, Types, PostLambdaTypeEnv),
+        Relation =.. [relation|Types],
+
+        % any variable introduced in the body of the lambda do not live
+        % beyond the lambda.  However, we cannot just discard the type
+        % environment altogether, as within the body we may have learned
+        % more information about captured variables.
+        afterBeforeCallTypeEnvs(PostLambdaTypeEnv, TypeEnv, NewTypeEnv).
+
 typeofTerm(DataDefs, ClauseDefs, TypeEnv, Structure, Type, NewTypeEnv) :-
         Structure =.. [ConstructorName|Params],
         !,
