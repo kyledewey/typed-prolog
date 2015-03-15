@@ -119,8 +119,7 @@ ensureType(TypeVar, TypeVarsInScope, _) :-
         !,
         memberEqual(TypeVar, TypeVarsInScope).
 ensureType(int, _, _) :- !.
-ensureType(Relation, TypeVarsInScope, DataDefNamesArity) :-
-        Relation =.. [relation|Types],
+ensureType(relation(Types), TypeVarsInScope, DataDefNamesArity) :-
         !,
         ensureTypes(Types, TypeVarsInScope, DataDefNamesArity).
 ensureType(ConstructorType, TypeVarsInScope, DataDefNamesArity) :-
@@ -205,7 +204,7 @@ dataDefNamesArity(DataDefs, NamesArity) :-
 ensureDataDefs(DataDefs, NamesArity) :-
         ensureDataDefs(NamesArity, [], _, DataDefs).
 
-% clausedef(map, [A], [list(A), relation(A, B), list(B)])
+% clausedef(map, [A], [list(A), relation([A, B]), list(B)])
 
 % For a clause definition, we need to check the following:
 %

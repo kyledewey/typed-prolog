@@ -103,9 +103,10 @@ constructorType(DataDefs, ClauseDefs, TypeEnv, ConstructorName,
 % the type environment.
 envVariableType([], Variable, Type, [pair(Variable, Type)]) :- !.
 envVariableType(Found, Variable, Type, Found) :-
-        Found = [pair(EnvVariable, Type)|_],
+        Found = [pair(EnvVariable, EnvType)|_],
         EnvVariable == Variable,
-        !.
+        !,
+        EnvType = Type.
 envVariableType([H|T], Variable, Type, [H|Rest]) :-
         envVariableType(T, Variable, Type, Rest).
 
@@ -181,13 +182,12 @@ typeofTerm(DataDefs, ClauseDefs, TypeEnv, Atom, Type, NewTypeEnv) :-
 typeofTerm(_, _, TypeEnv, N, int, TypeEnv) :-
         number(N),
         !.
-typeofTerm(DataDefs, ClauseDefs, TypeEnv, Lambda, Relation, NewTypeEnv) :-
+typeofTerm(DataDefs, ClauseDefs, TypeEnv, Lambda, relation(Types), NewTypeEnv) :-
         Lambda =.. [lambda, Params, Body],
         !,
         typecheckBody(DataDefs, ClauseDefs, TypeEnv, Body, TempTypeEnv),
         typeofTerms(DataDefs, ClauseDefs, TempTypeEnv,
                     Params, Types, PostLambdaTypeEnv),
-        Relation =.. [relation|Types],
 
         % any variable introduced in the body of the lambda do not live
         % beyond the lambda.  However, we cannot just discard the type
@@ -227,9 +227,9 @@ typecheckBody(DataDefs, ClauseDefs, TypeEnv, PairForm, NewTypeEnv) :-
 typecheckBody(DataDefs, ClauseDefs, TypeEnv, HigherOrderCall, NewTypeEnv) :-
         HigherOrderCall =.. [call, Relation|Params],
         !,
+        RelationType = relation(ExpectedTypes),
         typeofTerm(DataDefs, ClauseDefs, TypeEnv, Relation,
                    RelationType, TempTypeEnv),
-        RelationType =.. [relation|ExpectedTypes],
         typeofTerms(DataDefs, ClauseDefs, TempTypeEnv,
                     Params, ExpectedTypes, NewTypeEnv).
 typecheckBody(DataDefs, ClauseDefs, TypeEnv, FirstOrderCall, NewTypeEnv) :-
