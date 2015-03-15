@@ -1,9 +1,9 @@
-datadef(list, [A], [cons(A, list(A)), nil]).
+%% datadef(list, [A], [cons(A, list(A)), nil]).
 
 clausedef(map, [A, B], [list(A), relation(A, B), list(B)]).
 
-map(nil, _, nil).
-map(cons(HA, TA), F, cons(HB, TB)) :-
+map([], _, []).
+map([HA|TA], F, [HB|TB]) :-
         call(F, HA, HB),
         map(TA, F, TB).
 
@@ -19,7 +19,7 @@ clausedef(test, [], []).
 test :-
         X = lambda([], A is 1),
         call(X),
-        A = nil.
+        A = [].
 
 %% call_lambda0(lambda0_0) :-
 %%         A is 1.

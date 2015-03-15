@@ -288,14 +288,27 @@ isClauseDef(clausedef(_, _, _)).
 normalizeClause(:-(Head, Body), :-(Head, Body)) :- !.
 normalizeClause(Clause, :-(Clause, true)).
 
+builtinDataDef(datadef(list, [A], [.(A, list(A)), []])).
+builtinClauseDef(clausedef(>, [], [int, int])).
+
+builtinDataDefs(DataDefs) :-
+        findall(D, builtinDataDef(D), DataDefs).
+
+builtinClauseDefs(ClauseDefs) :-
+        findall(C, builtinClauseDef(C), ClauseDefs).
+
 % -Filename
 typecheckFile(Filename) :-
         clausesInFile(Filename, Clauses1),
 
         % extract out into data definitions, clause definitions, and everything
         % else.
-        partition(isDataDef, Clauses1, RawDataDefs, Clauses2),
-        partition(isClauseDef, Clauses2, RawClauseDefs, Clauses3),
+        partition(isDataDef, Clauses1, RawUserDataDefs, Clauses2),
+        partition(isClauseDef, Clauses2, RawUserClauseDefs, Clauses3),
+        builtinDataDefs(BuiltinDataDefs),
+        builtinClauseDefs(BuiltinClauseDefs),
+        append(RawUserDataDefs, BuiltinDataDefs, RawDataDefs),
+        append(RawUserClauseDefs, BuiltinClauseDefs, RawClauseDefs),
 
         % sanitize them
         maplist(normalizeClause, Clauses3, NormalizedClauses),
