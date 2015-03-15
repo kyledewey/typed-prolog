@@ -13,6 +13,13 @@ filter([H|T], R, ResultList) :-
             ResultList = Rest),
         filter(T, R, Rest).
 
+clausedef(foldLeft, [A, B], [list(A), B, relation(B, A, B), B]).
+foldLeft([], Accum, _, Accum).
+foldLeft([H|T], Accum, Relation, Result) :-
+        call(Relation, Accum, H, NewAccum),
+        foldLeft(T, NewAccum, Relation, Result).
+
+
 clausedef(add, [], [int, int, int]).
 add(X, Y, Z) :-
         Z is X * Y.
