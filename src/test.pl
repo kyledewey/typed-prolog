@@ -5,6 +5,14 @@ map([HA|TA], F, [HB|TB]) :-
         call(F, HA, HB),
         map(TA, F, TB).
 
+clausedef(filter, [A], [list(A), relation(A), list(A)]).
+filter([], _, []).
+filter([H|T], R, ResultList) :-
+        (call(R, H) ->
+            ResultList = [H|Rest];
+            ResultList = Rest),
+        filter(T, R, Rest).
+
 clausedef(add, [], [int, int, int]).
 add(X, Y, Z) :-
         Z is X * Y.
