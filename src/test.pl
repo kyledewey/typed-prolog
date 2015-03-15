@@ -29,6 +29,16 @@ addList(List, Retval) :-
         call(Helper, List, 0),
         ensureType(Helper).
 
+%% translatedAddList :-
+%%         Helper = lambda2_0(Retval, Helper),
+%%         call_lambda2(Helper, List, 0).
+
+%% call_lambda2(lambda2_0(Retval, Helper), CurList, Accum) :-
+%%         (CurList = [H|T] ->
+%%             (NewAccum is Accum + H,
+%%              call_lambda2(Helper, T, NewAccum));
+%%             (Retval = Accum)).
+
 clausedef(ensureType, [], [relation([list(int), int])]).
 ensureType(_).
 
