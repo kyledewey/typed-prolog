@@ -1,4 +1,5 @@
-:- module('sanitizer', [ensureProgram/3, bodyPairForm/3, bodyAtomForm/1]).
+:- module('sanitizer', [ensureProgram/3, bodyPairForm/3, bodyAtomForm/1,
+                        memberEqual/2]).
 
 % The syntax we consider is more restrictive than everything in Prolog.
 % Most importantly, we have a distinction between code and data, with
@@ -23,8 +24,7 @@ ensureTerm(_, Atom) :-
 ensureTerm(_, Int) :-
         number(Int),
         !.
-ensureTerm(ClauseDefNameArity, Lambda) :-
-        Lambda =.. [lambda, Params, Body],
+ensureTerm(ClauseDefNameArity, lambda(Params, Body)) :-
         !,
         ensureTerms(ClauseDefNameArity, Params),
         ensureBody(ClauseDefNameArity, Body).

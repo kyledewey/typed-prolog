@@ -182,8 +182,8 @@ typeofTerm(DataDefs, ClauseDefs, TypeEnv, Atom, Type, NewTypeEnv) :-
 typeofTerm(_, _, TypeEnv, N, int, TypeEnv) :-
         number(N),
         !.
-typeofTerm(DataDefs, ClauseDefs, TypeEnv, Lambda, relation(Types), NewTypeEnv) :-
-        Lambda =.. [lambda, Params, Body],
+typeofTerm(DataDefs, ClauseDefs, TypeEnv, lambda(Params, Body),
+           relation(Types), NewTypeEnv) :-
         !,
         typecheckBody(DataDefs, ClauseDefs, TypeEnv, Body, TempTypeEnv),
         typeofTerms(DataDefs, ClauseDefs, TempTypeEnv,
