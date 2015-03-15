@@ -82,9 +82,6 @@ ensureBody(ClauseDefNameArity, PairForm) :-
         !,
         ensureBody(ClauseDefNameArity, B1),
         ensureBody(ClauseDefNameArity, B2).
-ensureBody(ClauseDefNameArity, =(T1, T2)) :-
-        !,
-        ensureTerms(ClauseDefNameArity, [T1, T2]).
 ensureBody(ClauseDefNameArity, HigherOrderCall) :-
         HigherOrderCall =.. [call|Params],
         !,

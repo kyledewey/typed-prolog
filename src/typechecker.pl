@@ -59,8 +59,8 @@ getDataDef(DataDefs, ConstructorName, DataDef) :-
 %
 % Will introduce fresh type variables.
 getClauseDefExpectedTypes(ClauseDefs, ClauseName, ClauseArity, Expected) :-
-        member(pair(pair(ClauseName, ClauseArity),
-                    clausedef(_, _, Expected)), ClauseDefs).
+        member(pair(pair(ClauseName, ClauseArity), RawClauseDef), ClauseDefs),
+        copy_term(RawClauseDef, clausedef(_, _, Expected)).
 
 % -DataDefAlternatives: [Alternative]
 % -ConstructorName:     Name
@@ -224,10 +224,6 @@ typecheckBody(DataDefs, ClauseDefs, TypeEnv, PairForm, NewTypeEnv) :-
         !,
         typecheckBody(DataDefs, ClauseDefs, TypeEnv, B1, TempTypeEnv),
         typecheckBody(DataDefs, ClauseDefs, TempTypeEnv, B2, NewTypeEnv).
-typecheckBody(DataDefs, ClauseDefs, TypeEnv, =(T1, T2), NewTypeEnv) :-
-        !,
-        typeofTerm(DataDefs, ClauseDefs, TypeEnv, T1, Type, TempTypeEnv),
-        typeofTerm(DataDefs, ClauseDefs, TempTypeEnv, T2, Type, NewTypeEnv).
 typecheckBody(DataDefs, ClauseDefs, TypeEnv, HigherOrderCall, NewTypeEnv) :-
         HigherOrderCall =.. [call, Relation|Params],
         !,
@@ -297,6 +293,7 @@ builtinClauseDef(clausedef(>, [], [int, int])).
 builtinClauseDef(clausedef(<, [], [int, int])).
 builtinClauseDef(clausedef(=<, [], [int, int])).
 builtinClauseDef(clausedef(>=, [], [int, int])).
+builtinClauseDef(clausedef(=, [A], [A, A])).
 
 builtinClauseDefs(ClauseDefs) :-
         findall(C, builtinClauseDef(C), ClauseDefs).

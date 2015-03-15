@@ -1,5 +1,3 @@
-%% datadef(list, [A], [cons(A, list(A)), nil]).
-
 clausedef(map, [A, B], [list(A), relation(A, B), list(B)]).
 
 map([], _, []).
