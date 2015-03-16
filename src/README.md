@@ -5,7 +5,8 @@ Todo list:
 3. Order `call_lambda`s so that versions with the same arity are next to each other.
 4. Add support for global variables which can be translated to different representations
    for different engines.
-   
+5. Add support for modules.
+
 Done:
 
 1. Get `is` working
