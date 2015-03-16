@@ -1,4 +1,6 @@
-:- use_module('sanitizer.pl').
+:- use_module('sanitizer.pl', [ensureProgram/3]).
+:- use_module('translator.pl', [translateClauses/2]).
+:- use_module('util.pl').
 
 % -DataDef:     DataDef
 % -Constructor: Alternative
@@ -298,8 +300,12 @@ builtinClauseDef(clausedef(=, [A], [A, A])).
 builtinClauseDefs(ClauseDefs) :-
         findall(C, builtinClauseDef(C), ClauseDefs).
 
+write_term(Term) :-
+        write_term(Term, []),
+        format('.~n').
+
 % -Filename
-typecheckFile(Filename) :-
+typecheckAndTranslateFile(Filename) :-
         clausesInFile(Filename, Clauses1),
 
         % extract out into data definitions, clause definitions, and everything
@@ -314,8 +320,15 @@ typecheckFile(Filename) :-
         % sanitize them
         maplist(normalizeClause, Clauses3, NormalizedClauses),
         ensureProgram(RawDataDefs, RawClauseDefs, NormalizedClauses),
+        !,
 
         % do typechecking
         constructorToDataDefMapping(RawDataDefs, DataDefMapping),
         clauseNameArityToClauseDefMapping(RawClauseDefs, ClauseDefMapping),
-        typecheckClauses(DataDefMapping, ClauseDefMapping, NormalizedClauses).
+        typecheckClauses(DataDefMapping, ClauseDefMapping, NormalizedClauses),
+        !,
+
+        % if we get here, typechecking was ok.  Do translation.
+        translateClauses(NormalizedClauses, TranslatedClauses),
+        maplist(write_term, TranslatedClauses),
+        !.

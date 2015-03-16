@@ -1,5 +1,6 @@
-:- module('sanitizer', [ensureProgram/3, bodyPairForm/3, bodyAtomForm/1,
-                        memberEqual/2]).
+:- module('sanitizer', [ensureProgram/3]).
+
+:- use_module('util.pl').
 
 % The syntax we consider is more restrictive than everything in Prolog.
 % Most importantly, we have a distinction between code and data, with
@@ -29,29 +30,10 @@ ensureTerm(ClauseDefNameArity, lambda(Params, Body)) :-
         ensureTerms(ClauseDefNameArity, Params),
         ensureBody(ClauseDefNameArity, Body).
 ensureTerm(ClauseDefNameArity, Structure) :-
-        !,
         Contents = [_|_],
         Structure =.. [_|Contents],
+        !,
         ensureTerms(ClauseDefNameArity, Contents).
-
-% -InputBody: Body
-% -B1:        Body
-% -B2:        Body
-%
-% Tests if the input is a "pair form", like conjunction and disjunction.
-% If so, it will unify `B1` and `B2` with the members of the pair.  This
-% is here to avoid lots of repitition; these forms behave similarly across
-% the board.
-bodyPairForm(InputBody, B1, B2) :-
-        InputBody =.. [Name, B1, B2],
-        member(Name, [',', ';', '->']).
-
-% -InputBody: Body
-%
-% Succeeds if it's an atom form, like true or false
-bodyAtomForm(InputBody) :-
-        atom(InputBody),
-        member(InputBody, [true, fail, false]).
 
 %    e \in Exp ::= n | x | e_1 op e_2
 % op \in Binop ::= + | - | * | / | min | max
@@ -93,11 +75,6 @@ ensureBody(ClauseDefNameArity, FirstOrderCall) :-
         length(Params, Arity),
         member(pair(Name, Arity), ClauseDefNameArity),
         ensureTerms(ClauseDefNameArity, Params).
-
-% like member, except it uses == instead of =
-memberEqual(A, [H|T]) :-
-        A == H; memberEqual(A, T).
-
 
 % -TypeVarsInScope:   [TypeVar]
 % -DataDefNamesArity: [pair(Name, Arity)]
