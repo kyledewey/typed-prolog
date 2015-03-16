@@ -1,5 +1,6 @@
 :- module('util', [memberEqual/2, diffEqual/3, makeDistinctEqual/2,
-                   bodyAtomForm/1, bodyPairForm/3, bodyPairForm/4]).
+                   bodyAtomForm/1, bodyPairForm/3, bodyPairForm/4,
+                   addSet/3, setUnion/3]).
 
 % -Probe: A
 % -List:  [A]
@@ -7,6 +8,26 @@
 % like member, except it uses == instead of =
 memberEqual(A, [H|T]) :-
         A == H; memberEqual(A, T).
+
+% -OriginalSet: [A]
+% -Item: A
+% -NewSet: [A]
+%
+% Uses == instead of =
+addSet(Original, Item, [Item|Original]) :-
+        \+ memberEqual(Item, Original),
+        !.
+addSet(Original, _, Original).
+
+% -Set1: [A]
+% -Set2: [A]
+% -Result: [A]
+%
+% Uses == instead of =
+setUnion([], Set2, Set2).
+setUnion([H|T], Set2, Result) :-
+        addSet(Set2, H, TempSet),
+        setUnion(T, TempSet, Result).
 
 % -Input:         [A]
 % -SubtractThese: [A]

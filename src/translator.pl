@@ -55,55 +55,48 @@ freshLambdaLabel(Arity, Label) :-
         string_concat(Temp1, '_', Temp2),
         freshLabel(Temp2, Label).
 
-% -VariablesInScope: [Variable]
+% -PreviouslySeenVars: [Variable]
 % -Terms: [Term]
-% -NewVariablesInScope: [Variable]
-% -VariablesInScopeUsed: [Variable]
+% -VariablesUsed: [Variable]
 % -NewTerms: [TranslatedTerm]
 % -HoistedDefsInput: [Clause]
 % -HoistedDefsOutput: [Clause]
-translateTerms(InScope, [], InScope, [], [], Defs, Defs).
-translateTerms(InScope, [H|T], NewInScope, Used, [HT|TT], Input, Output) :-
-        translateTerm(InScope, H, TempInScope, HUsed, HT, Input, TempInput),
-        translateTerms(TempInScope, T, NewInScope, TUsed, TT, TempInput, Output),
+%
+% We might have variables used which we haven't seen before.
+% This essentially introduces variables.
+translateTerms(_, [], [], [], Defs, Defs).
+translateTerms(SeenVars, [H|T], Used, [HT|TT], Input, Output) :-
+        translateTerm(SeenVars, H, HUsed, HT, Input, TempInput),
+        setUnion(HUsed, SeenVars, NewSeenVars),
+        translateTerms(NewSeenVars, T, TUsed, TT, TempInput, Output),
+        append(HUsed, TUsed, DupUsed),
+        makeDistinctEqual(DupUsed, Used).
 
-        % We only care about stuff that was used in the original scope
-        append(HUsed, TUsed, TempUsed),
-        diffEqual(NewInScope, InScope, DiffScopes),
-        diffEqual(TempUsed, DiffScopes, Used).
-
-% -VariablesInScope: [Variable]
+% -PreviouslySeenVars: [Variable]
 % -Term: Term
-% -NewVariablesInScope: [Variable]
-% -VariablesInScopeUsed: [Variable]
+% -VariablesUsed: [Variable]
 % -NewTerm: TranslatedTerm
 % -HoistedDefsInput: [Clause]
 % -HoistedDefsOutput: [Clause]
-translateTerm(InScope, Var, NewInScope, Used, NewVar, Defs, Defs) :-
+translateTerm(_, Var, [Var], Var, Defs, Defs) :-
         var(Var),
-        !,
-        Var = NewVar,
-        (memberEqual(Var, InScope) ->
-            (NewInScope = InScope,
-             Used = [Var]);
-            (NewInScope = [Var|InScope],
-             Used = [])).
-translateTerm(InScope, Atom, InScope, [], Atom, Defs, Defs) :-
+        !.
+translateTerm(_, Atom, [], Atom, Defs, Defs) :-
         atom(Atom),
         !.
-translateTerm(InScope, Number, InScope, [], Number, Defs, Defs) :-
+translateTerm(_, Number, [], Number, Defs, Defs) :-
         number(Number),
         !.
-translateTerm(InScope, lambda(Params, Body), InScope, Used, Closure,
+translateTerm(SeenVars, lambda(Params, Body), LambdaCapturedUnique, Closure,
               Defs1, DefsFinal) :-
         !,
         % Translate each of the parameters to the lambda.  Variables
         % introduced here should not bleed into the outer scope, but
         % they will be needed in translating the body of the lambda
-        translateTerms(InScope, Params, LambdaParamsInScope,
-                       LambdaParamsUsed, TranslatedParams, Defs1, Defs2),
-        translateBody(LambdaParamsInScope, Body, Used,
-                      LambdaBodyUsed, TranslatedBody, Defs2, Defs3),
+        translateTerms(SeenVars, Params, ParamsUsed, TranslatedParams,
+                       Defs1, Defs2),
+        translateBody(ParamsUsed, Body, BodyUsed, TranslatedBody,
+                      Defs2, Defs3),
         
         % Introduce a lambda for this definition.  First, build up
         % the closure we're making, starting with the name.
@@ -112,10 +105,10 @@ translateTerm(InScope, lambda(Params, Body), InScope, Used, Closure,
         
         % The parameters to the closure are the variables which have been
         % closed over between the parameters and the body of the lambda.
-        append(LambdaParamsUsed, LambdaBodyUsed, LambdaUsed),
-        diffEqual(LambdaUsed, LambdaParamsInScope, LambdaCaptured),
+        diffEqual(ParamsUsed, SeenVars, LambdaIntroduces),
+        append(ParamsUsed, BodyUsed, LambdaUsed),
+        diffEqual(LambdaUsed, LambdaIntroduces, LambdaCaptured),
         makeDistinctEqual(LambdaCaptured, LambdaCapturedUnique),
-        format('LAMBDA USED: ~w~nLAMBDA PARAMS IN SCOPE: ~w~nLAMBDA CAPTURED: ~w~n', [LambdaUsed, LambdaParamsInScope, LambdaCaptured]),
         Closure =.. [Name|LambdaCapturedUnique],
 
         % The corresponding code for the closure will take the
@@ -123,11 +116,11 @@ translateTerm(InScope, lambda(Params, Body), InScope, Used, Closure,
         callLambdaLabel(Arity, CallName),
         Head =.. [CallName, Closure|TranslatedParams],
         Defs3 = [:-(Head, TranslatedBody)|DefsFinal].
-translateTerm(InScope, Structure, NewInScope, Used,
+translateTerm(SeenVars, Structure, Used,
               TranslatedStructure, Defs1, DefsFinal) :-
         Structure =.. [Name|Params],
         !,
-        translateTerms(InScope, Params, NewInScope, Used,
+        translateTerms(SeenVars, Params, Used,
                        TranslatedParams, Defs1, DefsFinal),
         TranslatedStructure =.. [Name|TranslatedParams].
 
@@ -135,75 +128,56 @@ callLambdaLabel(Arity, Label) :-
         string_concat('call_lambda', Arity, CallNameString),
         atom_codes(Label, CallNameString).
 
-% -VariablesInScope: [Variable]
-% -Exps: [ArithmeticExpresion]
-% -NewVariablesInScope: [Variable]
-% -VariablesInScopeUsed: [Variable]
-% -NewExps: [ArithmeticExpression]
-translateExps(_, [], [], [], []).
-translateExps(InScope, [H|T], NewInScope, Used, [HT|TT]) :-
-        translateExp(InScope, H, TempInScope, HUsed, HT),
-        translateExps(TempInScope, T, NewInScope, RestUsed, TT),
-        append(HUsed, RestUsed, Used).
-
-% -VariablesInScope: [Variable]
-% -Exp: ArithmeticExpresion
-% -NewVariablesInScope: [Variable]
-% -VariablesInScopeUsed: [Variable]
-% -NewExp: ArithmeticExpression
-translateExp(InScope, Exp, NewInScope, Used, Exp) :-
+% -Exps: [Exp]
+% -VariablesUsed: [Variable]
+% -TranslatedExps: [Exp]
+translateExps(Exps, Used, Exps) :-
         % our expressions don't actually require any translation
         % for the moment; this is setup in case of future changes
-        term_variables(Exp, VarsInExp),
-        diffEqual(VarsInExp, InScope, NewInScope),
-        diffEqual(VarsInExp, NewInScope, Used).
-        
-% -VariablesInScope: [Variable]
+        term_variables(Exps, Used).
+
+% -PreviouslySeenVars: [Variable]
 % -Bodies: [Body]
-% -NewVariablesInScope: [Variable]
-% -VariablesInScopeUsed: [Variable]
+% -VariablesUsed: [Variable]
 % -NewBodies: [TranslatedBody]
 % -HoistedDefsInput: [Clause]
 % -HoistedDefsOutput: [Clause]
-translateBodies(InScope, [], InScope, [], [], Defs, Defs).
-translateBodies(InScope, [H|T], NewInScope, Used, [HT|TT], Input, Output) :-
-        translateBody(InScope, H, TempInScope, HUsed, HT, Input, TempInput),
-        translateBodies(TempInScope, T, NewInScope, TUsed, TT, TempInput, Output),
+translateBodies(_, [], [], [], Defs, Defs).
+translateBodies(SeenVars, [H|T], Used, [HT|TT], Input, Output) :-
+        translateBody(SeenVars, H, HUsed, HT, Input, TempInput),
+        setUnion(HUsed, SeenVars, NewSeenVars),
+        translateBodies(NewSeenVars, T, TUsed, TT, TempInput, Output),
+        append(HUsed, TUsed, DupUsed),
+        makeDistinctEqual(DupUsed, Used).
 
-        % We only care about stuff that was used in the original scope
-        append(HUsed, TUsed, TempUsed),
-        diffEqual(NewInScope, InScope, DiffScopes),
-        diffEqual(TempUsed, DiffScopes, Used).
-
-% -VariablesInScope: [Variable]
+% -PreviouslySeenVars: [Variable]
 % -Body: Body
-% -NewVariablesInScope: [Variable]
-% -VariablesInScopeUsed: [Variable]
+% -VariablesUsed: [Variable]
 % -NewBody: TranslatedBody
 % -HoistedDefsInput: [Clause]
 % -HoistedDefsOutput: [Clause]
-translateBody(InScope, Atom, InScope, [], Atom, Defs, Defs) :-
+translateBody(_, Atom, [], Atom, Defs, Defs) :-
         atom(Atom),
         !.
-translateBody(InScope, is(Exp1, Exp2), NewInScope, Used,
+translateBody(_, is(Exp1, Exp2), Used,
               is(TranslatedExp1, TranslatedExp2), Defs, Defs) :-
         !,
-        translateExps(InScope, [Exp1, Exp2], NewInScope, Used,
+        translateExps([Exp1, Exp2], Used,
                       [TranslatedExp1, TranslatedExp2]).
-translateBody(InScope, PairForm, NewInScope, Used,
+translateBody(SeenVars, PairForm, Used,
               TranslatedPairForm, Defs1, DefsFinal) :-
         bodyPairForm(PairForm, Name, B1, B2),
         !,
-        translateBodies(InScope, [B1, B2], NewInScope, Used,
+        translateBodies(SeenVars, [B1, B2], Used,
                         NewBodies, Defs1, DefsFinal),
         TranslatedPairForm =.. [Name|NewBodies].
-translateBody(InScope, HigherOrderCall, NewInScope, Used,
+translateBody(SeenVars, HigherOrderCall, Used,
               TranslatedCall, Defs1, DefsFinal) :-
         HigherOrderCall =.. [call|Params],
         !,
         
         % Translate each of the parameters to the call
-        translateTerms(InScope, Params, NewInScope, Used,
+        translateTerms(SeenVars, Params, Used,
                        TranslatedParams, Defs1, DefsFinal),
         
         % replace this with a translated call
@@ -212,11 +186,11 @@ translateBody(InScope, HigherOrderCall, NewInScope, Used,
         assertion(ArityWithoutLambda >= 0),
         callLambdaLabel(ArityWithoutLambda, CallName),
         TranslatedCall =.. [CallName|TranslatedParams].
-translateBody(InScope, FirstOrderCall, NewInScope, Used,
+translateBody(SeenVars, FirstOrderCall, Used,
               TranslatedCall, Defs1, DefsFinal) :-
         FirstOrderCall =.. [Name|Params],
         !,
-        translateTerms(InScope, Params, NewInScope, Used,
+        translateTerms(SeenVars, Params, Used,
                        TranslatedParams, Defs1, DefsFinal),
         TranslatedCall =.. [Name|TranslatedParams].
 
@@ -229,9 +203,9 @@ denormalizeClause(Clause, Clause).
 % -HoistedDefsOutput: [Clause]
 translateClause(:-(Head, Body), NewClause, DefsInput, DefsOutput) :-
         Head =.. [Name|Params],
-        translateTerms([], Params, InScope, _, TranslatedParams,
+        translateTerms([], Params, Used, TranslatedParams,
                        DefsInput, TempDefs),
-        translateBody(InScope, Body, _, _, TranslatedBody,
+        translateBody(Used, Body, _, TranslatedBody,
                       TempDefs, DefsOutput),
         NewHead =.. [Name|TranslatedParams],
         denormalizeClause(:-(NewHead, TranslatedBody), NewClause).
