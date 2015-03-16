@@ -10,7 +10,9 @@ processFiles(Files, TranslatedClauses) :-
         translateClauses(Clauses, TranslatedClauses), !.
 
 write_term(Term) :-
-        write_term(Term, []),
+        copy_term(Term, Copy),
+        numbervars(Copy, 0, _, [singletons(true)]),
+        write_term(Copy, [numbervars(true)]),
         format('.~n').
 
 processFiles(Files) :-
