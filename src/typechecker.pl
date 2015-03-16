@@ -1,5 +1,5 @@
-:- use_module('sanitizer.pl', [ensureProgram/3]).
-:- use_module('translator.pl', [translateClauses/2]).
+:- module('typechecker', [typecheckClauses/3]).
+
 :- use_module('util.pl').
 
 % -DataDef:     DataDef
@@ -256,80 +256,13 @@ typecheckClause(DataDefs, ClauseDefs, RawClause) :-
 % -DataDefMapping:   [pair(Name, DataDef)]
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]
 % -Clauses:          [Clause]
-typecheckClauses(DataDefs, ClauseDefs, Clauses) :-
+typecheckClausesWithMappings(DataDefs, ClauseDefs, Clauses) :-
         maplist(typecheckClause(DataDefs, ClauseDefs), Clauses).
 
-% -Stream:  Stream
-% -Clauses: [Clause]
-clausesInStream(Stream, Clauses) :-
-        read_clause(Stream, Clause, []),
-        ((Clause == end_of_file) ->
-            (Clauses = []);
-            (Clauses = [Clause|Rest],
-             clausesInStream(Stream, Rest))).
-
-% -Filename
-% -Clauses: [Clause]
-clausesInFile(Filename, Clauses) :-
-        open(Filename, read, Stream, []),
-        clausesInStream(Stream, Clauses),
-        close(Stream).
-
-isDataDef(datadef(_, _, _)).
-isClauseDef(clausedef(_, _, _)).
-
-% -InputClause:  Clause
-% -OutputClause: Head :- Body.
-%
-% Read in clauses will either be a head or a full horn clause.
-% This will make everything a horn clause.
-normalizeClause(:-(Head, Body), :-(Head, Body)) :- !.
-normalizeClause(Clause, :-(Clause, true)).
-
-builtinDataDef(datadef(list, [A], [.(A, list(A)), []])).
-
-builtinDataDefs(DataDefs) :-
-        findall(D, builtinDataDef(D), DataDefs).
-
-builtinClauseDef(clausedef(>, [], [int, int])).
-builtinClauseDef(clausedef(<, [], [int, int])).
-builtinClauseDef(clausedef(=<, [], [int, int])).
-builtinClauseDef(clausedef(>=, [], [int, int])).
-builtinClauseDef(clausedef(=, [A], [A, A])).
-builtinClauseDef(clausedef(==, [A], [A, A])).
-
-builtinClauseDefs(ClauseDefs) :-
-        findall(C, builtinClauseDef(C), ClauseDefs).
-
-write_term(Term) :-
-        write_term(Term, []),
-        format('.~n').
-
-% -Filename
-typecheckAndTranslateFile(Filename) :-
-        clausesInFile(Filename, Clauses1),
-
-        % extract out into data definitions, clause definitions, and everything
-        % else.
-        partition(isDataDef, Clauses1, RawUserDataDefs, Clauses2),
-        partition(isClauseDef, Clauses2, RawUserClauseDefs, Clauses3),
-        builtinDataDefs(BuiltinDataDefs),
-        builtinClauseDefs(BuiltinClauseDefs),
-        append(RawUserDataDefs, BuiltinDataDefs, RawDataDefs),
-        append(RawUserClauseDefs, BuiltinClauseDefs, RawClauseDefs),
-
-        % sanitize them
-        maplist(normalizeClause, Clauses3, NormalizedClauses),
-        ensureProgram(RawDataDefs, RawClauseDefs, NormalizedClauses),
-        !,
-
-        % do typechecking
-        constructorToDataDefMapping(RawDataDefs, DataDefMapping),
-        clauseNameArityToClauseDefMapping(RawClauseDefs, ClauseDefMapping),
-        typecheckClauses(DataDefMapping, ClauseDefMapping, NormalizedClauses),
-        !,
-
-        % if we get here, typechecking was ok.  Do translation.
-        translateClauses(NormalizedClauses, TranslatedClauses),
-        maplist(write_term, TranslatedClauses),
-        !.
+% -DataDefs:   [DataDef]
+% -ClauseDefs: [ClauseDef]
+% -Clauses:    [NormalizedClause]
+typecheckClauses(DataDefs, ClauseDefs, Clauses) :-
+        constructorToDataDefMapping(DataDefs, DataDefMapping),
+        clauseNameArityToClauseDefMapping(ClauseDefs, ClauseDefMapping),
+        typecheckClausesWithMappings(DataDefMapping, ClauseDefMapping, Clauses).
