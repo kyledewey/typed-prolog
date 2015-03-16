@@ -17,12 +17,15 @@ clausedef(lessThanN, [], [list(int), int, list(int)]).
 lessThanN(List, N, NewList) :-
         filter(List, lambda([Cur], Cur < N), NewList).
 
-
 clausedef(foldLeft, [A, B], [list(A), B, relation([B, A, B]), B]).
 foldLeft([], Accum, _, Accum).
 foldLeft([H|T], Accum, Relation, Result) :-
         call(Relation, Accum, H, NewAccum),
         foldLeft(T, NewAccum, Relation, Result).
+
+clausedef(addListWithFoldLeft, [], [list(int), int]).
+addListWithFoldLeft(List, Retval) :-
+        foldLeft(List, 0, lambda([Acc, N, NewAcc], NewAcc is N + Acc), Retval).
 
 clausedef(addList, [], [list(int), int]).
 addList(List, Retval) :-
@@ -33,16 +36,6 @@ addList(List, Retval) :-
                 (Retval = Accum))),
         call(Helper, List, 0),
         ensureType(Helper).
-
-%% translatedAddList :-
-%%         Helper = lambda2_0(Retval, Helper),
-%%         call_lambda2(Helper, List, 0).
-
-%% call_lambda2(lambda2_0(Retval, Helper), CurList, Accum) :-
-%%         (CurList = [H|T] ->
-%%             (NewAccum is Accum + H,
-%%              call_lambda2(Helper, T, NewAccum));
-%%             (Retval = Accum)).
 
 clausedef(ensureType, [], [relation([list(int), int])]).
 ensureType(_).
@@ -65,9 +58,18 @@ clausedef(compare, [], [int, int]).
 compare(X, Y) :-
         X =< Y.
 
-%% call_lambda0(lambda0_0) :-
-%%         A is 1.
+clausedef(runTests, [], []).
+runTests :-
+        plus1([1,2,3], Res1),
+        Res1 == [2,3,4],
 
-%% translatedTest :-
-%%         X = lambda0_0,
-%%         call_lambda0(X).
+        lessThanN([1,2,3,4,5], 3, Res2),
+        Res2 == [1,2],
+
+        addListWithFoldLeft([1,2,3], Res3),
+        Res3 == 6,
+
+        addList([4,5,6], Res4),
+        Res4 == 15,
+
+        test.

@@ -107,7 +107,13 @@ translateTerm(SeenVars, lambda(Params, Body), LambdaCapturedUnique, Closure,
         % closed over between the parameters and the body of the lambda.
         diffEqual(ParamsUsed, SeenVars, LambdaIntroduces),
         append(ParamsUsed, BodyUsed, LambdaUsed),
-        diffEqual(LambdaUsed, LambdaIntroduces, LambdaCaptured),
+
+        % variables that the lambda both captured and internally defined
+        diffEqual(LambdaUsed, LambdaIntroduces, LambdaCapturedAndUses),
+
+        % only those variables which were captured from the outer scope
+        include(memberEqual_(SeenVars), LambdaCapturedAndUses, LambdaCaptured),
+
         makeDistinctEqual(LambdaCaptured, LambdaCapturedUnique),
         Closure =.. [Name|LambdaCapturedUnique],
 
