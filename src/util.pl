@@ -1,6 +1,6 @@
 :- module('util', [memberEqual/2, diffEqual/3, makeDistinctEqual/2,
                    bodyAtomForm/1, bodyPairForm/3, bodyPairForm/4,
-                   addSet/3, setUnion/3, memberEqual_/2]).
+                   addSet/3, setUnion/3, memberEqual_/2, sortItems/4]).
 
 % -Probe: A
 % -List:  [A]
@@ -90,3 +90,60 @@ bodyPairForm(InputBody, Name, B1, B2) :-
 % Like `bodyPairForm/4`, but it ignores the name.
 bodyPairForm(InputBody, B1, B2) :-
         bodyPairForm(InputBody, _, B1, B2).
+
+% -MapRelation: (A, B)
+% -Item:        A
+% -Pair:        pair(A, B)
+mapPair(MapRelation, A, pair(A, B)) :-
+        call(MapRelation, A, B).
+
+% -Items:       [pair(A, B)]
+% -CmpRelation: (B, B)
+% -Pair:        pair(A, B)
+% -Inserted:    [pair(A, B)]
+%
+% Ignores A.
+insertPair([], _, Pair, [Pair]) :- !.
+insertPair([HeadPair|Rest], CmpRelation, InsertPair, [InsertPair, HeadPair|Rest]) :-
+        HeadPair = pair(_, HeadB),
+        InsertPair = pair(_, InsertB),
+        \+ call(CmpRelation, HeadB, InsertB),
+        !.
+insertPair([HeadPair|Rest], CmpRelation, InsertPair, [HeadPair|RestResult]) :-
+        insertPair(Rest, CmpRelation, InsertPair, RestResult).
+
+% -Items:       [pair(A, B)]
+% -CmpRelation: (B, B)
+% -Accum:       [pair(A, B)]
+% -Retval:      [pair(A, B)]
+%
+% Ignores A.
+sortPairs([], _, Accum, Accum).
+sortPairs([H|T], CmpRelation, Accum, Retval) :-
+        insertPair(Accum, CmpRelation, H, NewAccum),
+        sortPairs(T, CmpRelation, NewAccum, Retval).
+
+% -Items:       [pair(A, B)]
+% -CmpRelation: (B, B)
+% -Sorted:      [pair(A, B)]
+%
+% Ignores A.
+sortPairs(Items, CmpRelation, Sorted) :-
+        sortPairs(Items, CmpRelation, [], Sorted).
+
+% -Pair:  pair(A, B)
+% -First: A
+fst(pair(A, _), A).
+
+% -Items:       [A]
+% -MapRelation: (A, B)
+% -CmpRelation: (B, B)
+% -Sorted:      [A]
+%
+% Sorts the given items, calling the map relation on them first
+% and then sorting by the CmpRelation.  The map relation is called
+% only once for each item.
+sortItems(Items, MapRelation, CmpRelation, Sorted) :-
+        maplist(mapPair(MapRelation), Items, ItemPairs),
+        sortPairs(ItemPairs, CmpRelation, SortedPairs),
+        maplist(fst, SortedPairs, Sorted).

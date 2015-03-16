@@ -225,10 +225,16 @@ translateClauses([H|T], [HT|TT], Input, Output) :-
         translateClause(H, HT, Input, Temp),
         translateClauses(T, TT, Temp, Output).
 
+% -Clause: Clause
+% -Name:   Name
+clauseName(:-(Head, _), Name) :-
+        Head =.. [Name|_].
+
 % -Clauses: [Clause]
 % -NewClauses: [Clause]
 translateClauses(Clauses, NewClauses) :-
         nb_setval(counter, 0),
         translateClauses(Clauses, MainClauses, AuxClauses, []),
-        append(MainClauses, AuxClauses, NewClauses).
+        sortItems(AuxClauses, translator:clauseName, @<, SortedAuxClauses),
+        append(MainClauses, SortedAuxClauses, NewClauses).
 
