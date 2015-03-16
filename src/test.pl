@@ -54,6 +54,18 @@ test :-
         call(X),
         A = [].
 
+clausedef(makeList, [A], [int, A, list(A)]).
+makeList(0, _, []).
+makeList(N, Item, [Item|Rest]) :-
+        NewN is N - 1,
+        makeList(NewN, Item, Rest).
+
+clausedef(benchmarkBigList, [], []).
+benchmarkBigList :-
+        makeList(50000000, 1, List),
+        addListWithFoldLeft(List, _).
+
+
 clausedef(compare, [], [int, int]).
 compare(X, Y) :-
         X =< Y.
