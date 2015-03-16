@@ -1,4 +1,4 @@
-:- module('clauses_util', [clausesFromFilesWithBuiltins/4]).
+:- module('clauses_util', [clausesFromFilesWithBuiltins/4, writeClauses/2]).
 
 builtinDataDef(datadef(list, [A], [.(A, list(A)), []])).
 
@@ -37,7 +37,7 @@ clausesInStream(Stream, ClausesInput, ClausesOutput) :-
 % -ClausesInput:  [Clause]
 % -ClausesOutput: [Clause]
 clausesInFile(Filename, ClausesInput, ClausesOutput) :-
-        open(Filename, read, Stream, []),
+        open(Filename, read, Stream),
         clausesInStream(Stream, ClausesInput, ClausesOutput),
         close(Stream).
 
@@ -75,3 +75,23 @@ clausesFromFilesWithBuiltins(Files, DataDefs, ClauseDefs, NormalizedClauses) :-
         append(BuiltinDataDefs, UserDataDefs, DataDefs),
         append(BuiltinClauseDefs, UserClauseDefs, ClauseDefs),
         maplist(normalizeClause, Clauses3, NormalizedClauses).
+
+% -What: Clause
+% -To:   Stream
+writeClause(Clause, Stream) :-
+        copy_term(Clause, Copy),
+        numbervars(Copy, 0, _, [singletons(true)]),
+        write_term(Stream, Copy, [numbervars(true)]),
+        format(Stream, '.~n', []).
+
+% -To:   Stream
+% -What: Clause
+writeClause_(Stream, Clause) :-
+        writeClause(Clause, Stream).
+
+% -Clauses: [Clause]
+% -Filename
+writeClauses(Clauses, Filename) :-
+        open(Filename, write, Stream),
+        maplist(writeClause_(Stream), Clauses),
+        close(Stream).
