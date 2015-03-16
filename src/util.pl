@@ -1,6 +1,7 @@
 :- module('util', [memberEqual/2, diffEqual/3, makeDistinctEqual/2,
                    bodyAtomForm/1, bodyPairForm/3, bodyPairForm/4,
-                   addSet/3, setUnion/3, memberEqual_/2, sortItems/4]).
+                   addSet/3, setUnion/3, memberEqual_/2, sortItems/4,
+                   bodyVarForm/3, bodyVarForm/4]).
 
 % -Probe: A
 % -List:  [A]
@@ -90,6 +91,20 @@ bodyPairForm(InputBody, Name, B1, B2) :-
 % Like `bodyPairForm/4`, but it ignores the name.
 bodyPairForm(InputBody, B1, B2) :-
         bodyPairForm(InputBody, _, B1, B2).
+
+% -InputBody: Body
+% -VarName:   Name, an atom
+% -Term:      Term
+bodyVarForm(InputBody, VarName, Term) :-
+        bodyVarForm(InputBody, _, VarName, Term).
+
+% -InputBody: Body
+% -VarOpName: setvar | getvar
+% -VarName:   Name, an atom
+% -Term:      Term
+bodyVarForm(InputBody, VarOpName, VarName, Term) :-
+        InputBody =.. [VarOpName, VarName, Term],
+        member(VarOpName, ['setvar', 'getvar']).
 
 % -MapRelation: (A, B)
 % -Item:        A

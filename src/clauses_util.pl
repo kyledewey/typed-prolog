@@ -1,4 +1,4 @@
-:- module('clauses_util', [clausesFromFilesWithBuiltins/4, writeClauses/2]).
+:- module('clauses_util', [clausesFromFilesWithBuiltins/5, writeClauses/2]).
 
 builtinDataDef(datadef(list, [A], [.(A, list(A)), []])).
 
@@ -56,25 +56,29 @@ clausesInFiles(Files, Clauses) :-
 
 isDataDef(datadef(_, _, _)).
 isClauseDef(clausedef(_, _, _)).
+isGlobalVarDef(globalvardef(_, _, _)).
 
 % -[Filename]
-% -DataDefs:   [DataDef]
-% -ClauseDefs: [ClauseDef]
-% -Clauses:    [Clause]
+% -DataDefs:      [DataDef]
+% -ClauseDefs:    [ClauseDef]
+% -GlobalVarDefs: [GlobalVarDef]
+% -Clauses:       [Clause]
 %
 % All the resulting clauses have :- in the head.  Includes builtins
-clausesFromFilesWithBuiltins(Files, DataDefs, ClauseDefs, NormalizedClauses) :-
+clausesFromFilesWithBuiltins(Files, DataDefs, ClauseDefs,
+                             GlobalVarDefs, NormalizedClauses) :-
         clausesInFiles(Files, Clauses1),
         
         % extract out into data definitions, clause definitions, and everything
         % else.
         partition(isDataDef, Clauses1, UserDataDefs, Clauses2),
         partition(isClauseDef, Clauses2, UserClauseDefs, Clauses3),
+        partition(isGlobalVarDef, Clauses3, GlobalVarDefs, Clauses4),
         builtinDataDefs(BuiltinDataDefs),
         builtinClauseDefs(BuiltinClauseDefs),
         append(BuiltinDataDefs, UserDataDefs, DataDefs),
         append(BuiltinClauseDefs, UserClauseDefs, ClauseDefs),
-        maplist(normalizeClause, Clauses3, NormalizedClauses).
+        maplist(normalizeClause, Clauses4, NormalizedClauses).
 
 % -What: Clause
 % -To:   Stream

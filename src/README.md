@@ -1,8 +1,6 @@
 Todo list:
 
-1. Add support for global variables which can be translated to different representations
-   for different engines.
-2. Add support for modules.
+1. Add support for modules.
 
 Done:
 
@@ -13,3 +11,5 @@ Done:
 4. Make things emit variables that aren't singletons
 5. Actually write the code to a file
 6. Order `call_lambda`s so that versions with the same arity are next to each other.
+7. Add support for global variables which can be translated to different representations
+   for different engines.

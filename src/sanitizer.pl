@@ -1,4 +1,4 @@
-:- module('sanitizer', [ensureProgram/3]).
+:- module('sanitizer', [ensureProgram/4]).
 
 :- use_module('util.pl').
 
@@ -59,6 +59,11 @@ ensureBody(_, is(VarOrNum, Exp)) :-
         !,
         (var(VarOrNum); number(VarOrNum)),
         ensureArithExp(Exp).
+ensureBody(ClauseDefNameArity, VarForm) :-
+        bodyVarForm(VarForm, VarName, Term),
+        !,
+        atom(VarName),
+        ensureTerm(ClauseDefNameArity, Term).
 ensureBody(ClauseDefNameArity, PairForm) :-
         bodyPairForm(PairForm, B1, B2),
         !,
@@ -225,12 +230,38 @@ ensureClause(ClauseDefNameArity, :-(Head, Body)) :-
         ensureTerms(ClauseDefNameArity, Params),
         ensureBody(ClauseDefNameArity, Body).
 
-% -DataDefs:   [DataDef]
-% -ClauseDefs: [ClauseDef]
-% -Clauses:    [Clause]
-ensureProgram(DataDefs, ClauseDefs, Clauses) :-
+% -DataDefNamesArity: [pair(Name, Arity)]
+% -GlobalVarDef:      GlobalVarDef
+% -SeenGlobal:        [Name]
+% -NewSeenGlobal:     [Name]
+ensureGlobalVarDef(DataDefNamesArity, globalvardef(Name, TypeVars, Type),
+                   Seen, [Name|Seen]) :-
+        atom(Name),
+        \+ member(Name, Seen),
+        ensureTypeVars(TypeVars),
+        ensureType(Type, TypeVars, DataDefNamesArity).
+
+% -DataDefNamesArity: [pair(Name, Arity)]
+% -GlobalVarDefs:     [GlobalVarDef]
+% -SeenGlobal:        [Name]
+ensureGlobalVarDefs(_, [], _).
+ensureGlobalVarDefs(DataDefNamesArity, [H|T], Seen) :-
+        ensureGlobalVarDef(DataDefNamesArity, H, Seen, NewSeen),
+        ensureGlobalVarDefs(DataDefNamesArity, T, NewSeen).
+
+% -DataDefNamesArity: [pair(Name, Arity)]
+% -GlobalVarDefs: [GlobalVarDef]
+ensureGlobalVarDefs(DataDefNamesArity, VarDefs) :-
+        ensureGlobalVarDefs(DataDefNamesArity, VarDefs, []).
+
+% -DataDefs:      [DataDef]
+% -ClauseDefs:    [ClauseDef]
+% -GlobalVarDefs: [GlobalVarDef]
+% -Clauses:       [Clause]
+ensureProgram(DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
         dataDefNamesArity(DataDefs, DataDefNamesArity),
         clauseDefNamesArity(ClauseDefs, ClauseDefNamesArity),
         ensureDataDefs(DataDefs, DataDefNamesArity),
         ensureClauseDefs(DataDefNamesArity, ClauseDefs),
+        ensureGlobalVarDefs(DataDefNamesArity, GlobalVarDefs),
         maplist(ensureClause(ClauseDefNamesArity), Clauses).

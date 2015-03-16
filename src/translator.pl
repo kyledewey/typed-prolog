@@ -1,4 +1,4 @@
-:- module('translator', [translateClauses/2]).
+:- module('translator', [translateClauses/3]).
 
 :- use_module('util.pl').
 
@@ -71,6 +71,23 @@ translateTerms(SeenVars, [H|T], Used, [HT|TT], Input, Output) :-
         translateTerms(NewSeenVars, T, TUsed, TT, TempInput, Output),
         append(HUsed, TUsed, DupUsed),
         makeDistinctEqual(DupUsed, Used).
+
+% -VarOpName: setvar | getvar
+% -Engine:    swipl | gnuprolog
+% -PredName:  Name
+varManipPredName(setvar, swipl, nb_setval).
+varManipPredName(setvar, gnuprolog, g_assign).
+varManipPredName(getvar, swipl, nb_getval).
+varManipPredName(getvar, gnuprolog, g_read).
+
+% -VarOpName:  Name
+% -VarName:    Name
+% -Term:       TranslatedTerm
+% -Translated: TranslatedBody
+translatedVarForm(VarOpName, VarName, Term, Translated) :-
+        nb_getval(engine, Engine),
+        varManipPredName(VarOpName, Engine, PredName),
+        Translated =.. [PredName, VarName, Term].
 
 % -PreviouslySeenVars: [Variable]
 % -Term: Term
@@ -170,6 +187,14 @@ translateBody(_, is(Exp1, Exp2), Used,
         !,
         translateExps([Exp1, Exp2], Used,
                       [TranslatedExp1, TranslatedExp2]).
+translateBody(SeenVars, VarForm, Used, TranslatedVarForm,
+              Defs1, DefsFinal) :-
+        bodyVarForm(VarForm, OpName, VarName, Term),
+        !,
+        translateTerm(SeenVars, Term, Used, TranslatedTerm,
+                      Defs1, DefsFinal),
+        translatedVarForm(OpName, VarName, TranslatedTerm,
+                          TranslatedVarForm).
 translateBody(SeenVars, PairForm, Used,
               TranslatedPairForm, Defs1, DefsFinal) :-
         bodyPairForm(PairForm, Name, B1, B2),
@@ -230,10 +255,12 @@ translateClauses([H|T], [HT|TT], Input, Output) :-
 clauseName(:-(Head, _), Name) :-
         Head =.. [Name|_].
 
-% -Clauses: [Clause]
+% -Clauses:    [Clause]
+% -Engine:     swipl | gnuprolog
 % -NewClauses: [Clause]
-translateClauses(Clauses, NewClauses) :-
+translateClauses(Clauses, Engine, NewClauses) :-
         nb_setval(counter, 0),
+        nb_setval(engine, Engine),
         translateClauses(Clauses, MainClauses, AuxClauses, []),
         sortItems(AuxClauses, translator:clauseName, @<, SortedAuxClauses),
         append(MainClauses, SortedAuxClauses, NewClauses).

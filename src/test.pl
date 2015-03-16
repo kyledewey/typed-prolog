@@ -70,6 +70,13 @@ clausedef(compare, [], [int, int]).
 compare(X, Y) :-
         X =< Y.
 
+globalvardef(counter, [], int).
+clausedef(freshInt, [], [int]).
+freshInt(N) :-
+        getvar(counter, N),
+        NewN is N + 1,
+        setvar(counter, NewN).
+
 clausedef(runTests, [], []).
 runTests :-
         plus1([1,2,3], Res1),
@@ -84,4 +91,10 @@ runTests :-
         addList([4,5,6], Res4),
         Res4 == 15,
 
-        test.
+        test,
+
+        setvar(counter, 0),
+        freshInt(N1),
+        N1 == 0,
+        freshInt(N2),
+        N2 == 1.
