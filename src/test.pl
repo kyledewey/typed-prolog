@@ -13,6 +13,11 @@ filter([H|T], R, ResultList) :-
             ResultList = Rest),
         filter(T, R, Rest).
 
+clausedef(lessThanN, [], [list(int), int, list(int)]).
+lessThanN(List, N, NewList) :-
+        filter(List, lambda([Cur], Cur < N), NewList).
+
+
 clausedef(foldLeft, [A, B], [list(A), B, relation([B, A, B]), B]).
 foldLeft([], Accum, _, Accum).
 foldLeft([H|T], Accum, Relation, Result) :-
