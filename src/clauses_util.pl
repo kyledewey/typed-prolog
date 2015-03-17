@@ -1,4 +1,4 @@
-:- module('clauses_util', [clausesFromFilesWithBuiltins/5, writeClauses/2]).
+:- module('clauses_util', [loadFileWithBuiltins/2, writeClauses/2]).
 
 builtinDataDef(datadef(list, [A], [.(A, list(A)), []])).
 
@@ -24,61 +24,79 @@ normalizeClause(:-(Head, Body), :-(Head, Body)) :- !.
 normalizeClause(Clause, :-(Clause, true)).
 
 % -Stream:  Stream
-% -ClausesInput:  [Clause]
-% -ClausesOutput: [Clause]
-clausesInStream(Stream, ClausesInput, ClausesOutput) :-
+% -Clauses: [Clause]
+clausesInStream(Stream, Clauses) :-
         read_clause(Stream, Clause, []),
         ((Clause == end_of_file) ->
-            (ClausesInput = ClausesOutput);
-            (ClausesInput = [Clause|Rest],
-             clausesInStream(Stream, Rest, ClausesOutput))).
+            (Clauses = []);
+            (Clauses = [Clause|Rest],
+             clausesInStream(Stream, Rest))).
 
 % -Filename
-% -ClausesInput:  [Clause]
-% -ClausesOutput: [Clause]
-clausesInFile(Filename, ClausesInput, ClausesOutput) :-
+% -Clauses: [Clause]
+clausesInFile(Filename, Clauses) :-
         open(Filename, read, Stream),
-        clausesInStream(Stream, ClausesInput, ClausesOutput),
+        clausesInStream(Stream, Clauses),
         close(Stream).
 
-% -[Filename]
-% -ClausesInput:  [Clause]
-% -ClausesOutput: [Clause]
-clausesInFiles([], Clauses, Clauses).
-clausesInFiles([H|T], InputClauses, OutputClauses) :-
-        clausesInFile(H, InputClauses, TempClauses),
-        clausesInFiles(T, TempClauses, OutputClauses).
+% ExportedClause: Name/Arity
+% ExportedData:   TypeName
+% ModuleDef: module(Name, [ExportedClause], [ExportedData])
+% UseModule: use_module(FileName, [ExportedClause], [ExportedData])
+% loadedFile([DataDef], [ClauseDef], [GlobalVarDef],
+%            option(ModuleDef), [UseModule], [Clause])
 
-% -[Filename]
-% -Clauses: [Clause]
-clausesInFiles(Files, Clauses) :-
-        clausesInFiles(Files, Clauses, []).
+% -[(A)]
+% -[A]
+% -[[A]]
+%
+% Everything that didn't get partitioned will be put into the last element
+partitionBy([], Rest, [Rest]).
+partitionBy([H|T], Items, [Group|Rest]) :-
+        partition(H, Items, Group, RestItems),
+        partitionBy(T, RestItems, Rest).
+
+% -[ModuleDef]
+% -option(ModuleDef)
+moduleDefsListToOptionModuleDef([], none).
+moduleDefsListToOptionModuleDef([ModuleDef], some(ModuleDef)).
+
+% -Filename
+% -LoadedFile: loadedFile
+%
+% Does not sanitize the file.  Will normalize clauses
+loadFile(
+        Filename,
+        loadedFile(DataDefs, ClauseDefs, GlobalVarDefs,
+                   ModuleDef, UseModules, Clauses)) :-
+        clausesInFile(Filename, Clauses1),
+        partitionBy([isDataDef, isClauseDef, isGlobalVarDef, isModuleDef, isUseModule],
+                    Clauses1,
+                    [DataDefs, ClauseDefs, GlobalVarDefs, ModuleDefsList, UseModules,
+                     RawClauses]),
+        moduleDefsListToOptionModuleDef(ModuleDefsList, ModuleDef),
+        maplist(normalizeClause, RawClauses, Clauses).
 
 isDataDef(datadef(_, _, _)).
 isClauseDef(clausedef(_, _, _)).
 isGlobalVarDef(globalvardef(_, _, _)).
+isModuleDef(module(_, _, _)).
+isUseModule(use_module(_, _, _)).
 
-% -[Filename]
-% -DataDefs:      [DataDef]
-% -ClauseDefs:    [ClauseDef]
-% -GlobalVarDefs: [GlobalVarDef]
-% -Clauses:       [Clause]
+% -Filename
+% -LoadedFile
 %
 % All the resulting clauses have :- in the head.  Includes builtins
-clausesFromFilesWithBuiltins(Files, DataDefs, ClauseDefs,
-                             GlobalVarDefs, NormalizedClauses) :-
-        clausesInFiles(Files, Clauses1),
-        
-        % extract out into data definitions, clause definitions, and everything
-        % else.
-        partition(isDataDef, Clauses1, UserDataDefs, Clauses2),
-        partition(isClauseDef, Clauses2, UserClauseDefs, Clauses3),
-        partition(isGlobalVarDef, Clauses3, GlobalVarDefs, Clauses4),
+loadFileWithBuiltins(
+        Filename,
+        loadedFile(DataDefs, ClauseDefs, GlobalVarDefs, ModuleDef,
+                   UseModules, Clauses)) :-
+        loadFile(Filename, loadedFile(UserDataDefs, UserClauseDefs, GlobalVarDefs,
+                                      ModuleDef, UseModules, Clauses)),
         builtinDataDefs(BuiltinDataDefs),
         builtinClauseDefs(BuiltinClauseDefs),
         append(BuiltinDataDefs, UserDataDefs, DataDefs),
-        append(BuiltinClauseDefs, UserClauseDefs, ClauseDefs),
-        maplist(normalizeClause, Clauses4, NormalizedClauses).
+        append(BuiltinClauseDefs, UserClauseDefs, ClauseDefs).
 
 % -What: Clause
 % -To:   Stream

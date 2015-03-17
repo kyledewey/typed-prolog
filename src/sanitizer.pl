@@ -1,39 +1,35 @@
-:- module('sanitizer', [ensureProgram/4]).
+:- module('sanitizer', [sanitizeFile/1]).
 
 :- use_module('util.pl').
 
 % The syntax we consider is more restrictive than everything in Prolog.
 % Most importantly, we have a distinction between code and data, with
 % lambdas being a well-defined intermediary between the two.  In this module,
-% we make sure that things are syntactically well-formed.  We also check
-% that at the very least, we have calls with the appropriate name/arity,
-% which we can check cheaply here with information we need to gather anyway.
+% we make sure that things are syntactically well-formed.
 
-% -ClauseDefNameArity: [pair(Name, Arity)]
 % -Terms:              [Term]
-ensureTerms(ClauseDefNameArity, Terms) :-
-        maplist(ensureTerm(ClauseDefNameArity), Terms).
+ensureTerms(Terms) :-
+        maplist(ensureTerm, Terms).
 
-% -ClauseDefNameArity: [pair(Name, Arity)]
 % -Term:               Term
-ensureTerm(_, Var) :-
+ensureTerm(Var) :-
         var(Var),
         !.
-ensureTerm(_, Atom) :-
+ensureTerm(Atom) :-
         atom(Atom),
         !.
-ensureTerm(_, Int) :-
+ensureTerm(Int) :-
         number(Int),
         !.
-ensureTerm(ClauseDefNameArity, lambda(Params, Body)) :-
+ensureTerm(lambda(Params, Body)) :-
         !,
-        ensureTerms(ClauseDefNameArity, Params),
-        ensureBody(ClauseDefNameArity, Body).
-ensureTerm(ClauseDefNameArity, Structure) :-
+        ensureTerms(Params),
+        ensureBody(Body).
+ensureTerm(Structure) :-
         Contents = [_|_],
         Structure =.. [_|Contents],
         !,
-        ensureTerms(ClauseDefNameArity, Contents).
+        ensureTerms(Contents).
 
 %    e \in Exp ::= n | x | e_1 op e_2
 % op \in Binop ::= + | - | * | / | min | max
@@ -50,91 +46,81 @@ ensureArithExp(Binop) :-
         ensureArithExp(E1),
         ensureArithExp(E2).
 
-% -ClauseDefNameArity: [pair(Name, Arity)]
 % -Body: Body
-ensureBody(_, AtomForm) :-
+ensureBody(AtomForm) :-
         bodyAtomForm(AtomForm),
         !.
-ensureBody(_, is(VarOrNum, Exp)) :-
+ensureBody(is(VarOrNum, Exp)) :-
         !,
         (var(VarOrNum); number(VarOrNum)),
         ensureArithExp(Exp).
-ensureBody(ClauseDefNameArity, VarForm) :-
+ensureBody(VarForm) :-
         bodyVarForm(VarForm, VarName, Term),
         !,
         atom(VarName),
-        ensureTerm(ClauseDefNameArity, Term).
-ensureBody(ClauseDefNameArity, PairForm) :-
+        ensureTerm(Term).
+ensureBody(PairForm) :-
         bodyPairForm(PairForm, B1, B2),
         !,
-        ensureBody(ClauseDefNameArity, B1),
-        ensureBody(ClauseDefNameArity, B2).
-ensureBody(ClauseDefNameArity, HigherOrderCall) :-
+        ensureBody(B1),
+        ensureBody(B2).
+ensureBody(HigherOrderCall) :-
         HigherOrderCall =.. [call|Params],
         !,
-        ensureTerms(ClauseDefNameArity, Params).
-ensureBody(ClauseDefNameArity, FirstOrderCall) :-
+        ensureTerms(Params).
+ensureBody(FirstOrderCall) :-
         FirstOrderCall =.. [Name|Params],
         atom(Name),
         !,
-        length(Params, Arity),
-        member(pair(Name, Arity), ClauseDefNameArity),
-        ensureTerms(ClauseDefNameArity, Params).
+        ensureTerms(Params).
 
 % -TypeVarsInScope:   [TypeVar]
-% -DataDefNamesArity: [pair(Name, Arity)]
 % -Type
-ensureType_(TypeVarsInScope, DataDefNamesArity, Type) :-
-        ensureType(Type, TypeVarsInScope, DataDefNamesArity).
+ensureType_(TypeVarsInScope, Type) :-
+        ensureType(Type, TypeVarsInScope).
 
 % -Types:             [Type]
 % -TypeVarsInScope:   [TypeVar]
-% -DataDefNamesArity: [pair(Name, Arity)]
-ensureTypes(Types, TypeVarsInScope, DataDefNamesArity) :-
-        maplist(ensureType_(TypeVarsInScope, DataDefNamesArity), Types).
+ensureTypes(Types, TypeVarsInScope) :-
+        maplist(ensureType_(TypeVarsInScope), Types).
 
 % -Type
 % -TypeVarsInScope:   [TypeVar]
-% -DataDefNamesArity: [pair(Name, Arity)]
-ensureType(TypeVar, TypeVarsInScope, _) :-
+ensureType(TypeVar, TypeVarsInScope) :-
         var(TypeVar),
         !,
         memberEqual(TypeVar, TypeVarsInScope).
-ensureType(int, _, _) :- !.
-ensureType(relation(Types), TypeVarsInScope, DataDefNamesArity) :-
+ensureType(int, _) :- !.
+ensureType(relation(Types), TypeVarsInScope) :-
         !,
-        ensureTypes(Types, TypeVarsInScope, DataDefNamesArity).
-ensureType(ConstructorType, TypeVarsInScope, DataDefNamesArity) :-
-        ConstructorType =.. [Name|Types],
+        ensureTypes(Types, TypeVarsInScope).
+ensureType(ConstructorType, TypeVarsInScope) :-
+        ConstructorType =.. [_|Types],
         !,
-        length(Types, Arity),
-        member(pair(Name, Arity), DataDefNamesArity),
-        ensureTypes(Types, TypeVarsInScope, DataDefNamesArity).
+        ensureTypes(Types, TypeVarsInScope).
 
 % -TypeVarsInScope:   [TypeVar]
-% -DataDefNamesArity: [pair(Name, Arity)]
 % -SeenConstructors:  [Name]
 % -NewConstructors:   [Name]
 % -Alternative
-ensureDataDefAlternative(TypeVarsInScope, DataDefNamesArity,
+ensureDataDefAlternative(TypeVarsInScope,
                          SeenConstructors, [AltName|SeenConstructors],
                          Alternative) :-
         Alternative =.. [AltName|Types],
         \+ memberEqual(AltName, SeenConstructors),
-        ensureTypes(Types, TypeVarsInScope, DataDefNamesArity).
+        ensureTypes(Types, TypeVarsInScope).
 
 % -TypeVarsInScope:   [TypeVar]
-% -DataDefNamesArity: [pair(Name, Arity)]
 % -SeenConstructors:  [Name]
 % -NewConstructors:   [Name]
 % -Alternatives:      [Alternative]
-ensureDataDefAlternatives(_, _, Constructors, Constructors, []).
-ensureDataDefAlternatives(TypeVarsInScope, DataDefNamesArity,
+ensureDataDefAlternatives(_, Constructors, Constructors, []).
+ensureDataDefAlternatives(TypeVarsInScope,
                           SeenConstructors, NewConstructors,
                           [H|T]) :-
-        ensureDataDefAlternative(TypeVarsInScope, DataDefNamesArity,
+        ensureDataDefAlternative(TypeVarsInScope,
                                  SeenConstructors, TempConstructors, H),
-        ensureDataDefAlternatives(TypeVarsInScope, DataDefNamesArity,
+        ensureDataDefAlternatives(TypeVarsInScope,
                                   TempConstructors, NewConstructors, T).
 
 % -TypeVars: [TypeVar]
@@ -144,124 +130,83 @@ ensureTypeVars(TypeVars) :-
 
 % datadef(list, [A], [cons(A, list(A)), nil]).
 
-% -DataDefNamesArity: [pair(Name, Arity)]
 % -SeenConstructors:  [Name]
 % -NewConstructors:   [Name]
 % -DataDef
-ensureDataDef(DataDefNamesArity, SeenConstructors, NewConstructors,
+ensureDataDef(SeenConstructors, NewConstructors,
               datadef(Name, TypeVarsInScope, Alternatives)) :-
         atom(Name),
         ensureTypeVars(TypeVarsInScope),
         Alternatives = [_|_], % non-empty
-        ensureDataDefAlternatives(TypeVarsInScope, DataDefNamesArity,
+        ensureDataDefAlternatives(TypeVarsInScope,
                                   SeenConstructors, NewConstructors,
                                   Alternatives).
 
-% -DataDefNamesArity: [pair(Name, Arity)]
 % -SeenConstructors:  [Name]
 % -NewConstructors:   [Name]
 % -DataDefs:          [DataDef]
-ensureDataDefs(_, Constructors, Constructors, []).
-ensureDataDefs(DataDefNamesArity, SeenConstructors, NewConstructors, [H|T]) :-
-        ensureDataDef(DataDefNamesArity, SeenConstructors,
+ensureDataDefs(Constructors, Constructors, []).
+ensureDataDefs(SeenConstructors, NewConstructors, [H|T]) :-
+        ensureDataDef(SeenConstructors,
                       TempConstructors, H),
-        ensureDataDefs(DataDefNamesArity, TempConstructors,
+        ensureDataDefs(TempConstructors,
                        NewConstructors, T).
         
-% -DataDef
-% -Name
-% -pair(Name, Arity)
-datadefExtractor(datadef(Name, TypeParams, _), Name, pair(Name, Arity)) :-
-        atom(Name),
-        length(TypeParams, Arity).
-
-% -DataDefs:   [DataDef]
-% -NamesArity: [pair(Name, Arity)]
-dataDefNamesArity(DataDefs, NamesArity) :-
-        maplist(datadefExtractor, DataDefs, DataDefNames, NamesArity),
-        is_set(DataDefNames).
-
 % -DataDefs: [DataDef]
-% -NamesArity: [pair(Name, Arity)]
-ensureDataDefs(DataDefs, NamesArity) :-
-        ensureDataDefs(NamesArity, [], _, DataDefs).
+ensureDataDefs(DataDefs) :-
+        ensureDataDefs([], _, DataDefs).
 
 % clausedef(map, [A], [list(A), relation([A, B]), list(B)])
 
-% For a clause definition, we need to check the following:
-%
-% -Type variables are all in scope
-% -No other clause definition with the same name and arity exists
-
-% -DataDefNamesArity:  [pair(Name, Arity)]
 % -ClauseDef
-ensureClauseDef(DataDefNamesArity, clausedef(Name, TypeVars, ParamTypes)) :-
+ensureClauseDef(clausedef(Name, TypeVars, ParamTypes)) :-
         atom(Name),
         ensureTypeVars(TypeVars),
-        ensureTypes(ParamTypes, TypeVars, DataDefNamesArity).
+        ensureTypes(ParamTypes, TypeVars).
 
 
-% -DataDefNamesArity: [pair(Name, Arity)]
 % -ClauseDefs:        [ClauseDef]
-ensureClauseDefs(_, []).
-ensureClauseDefs(DataDefNamesArity, [H|T]) :-
-        ensureClauseDef(DataDefNamesArity, H),
-        ensureClauseDefs(DataDefNamesArity, T).
+ensureClauseDefs(ClauseDefs) :-
+        maplist(ensureClauseDef, ClauseDefs).
 
-% -ClauseDef: ClauseDef
-% -Pair:      pair(Name, Arity)
-clausedefExtractor(clausedef(Name, _, Params), pair(Name, Arity)) :-
-        atom(Name),
-        length(Params, Arity).
-
-% -ClauseDefs: [ClauseDef]
-% -NameArity:  [pair(Name, Arity)]
-clauseDefNamesArity(ClauseDefs, NameArity) :-
-        maplist(clausedefExtractor, ClauseDefs, NameArity),
-        is_set(NameArity).
-
-% -ClauseDefNameArity: [pair(Name, Arity)]
 % -Clause:             Clause
-ensureClause(ClauseDefNameArity, :-(Head, Body)) :-
+ensureClause(:-(Head, Body)) :-
         Head =.. [Name|Params],
         atom(Name),
-        length(Params, Arity),
-        member(pair(Name, Arity), ClauseDefNameArity),
-        ensureTerms(ClauseDefNameArity, Params),
-        ensureBody(ClauseDefNameArity, Body).
+        ensureTerms(Params),
+        ensureBody(Body).
 
-% -DataDefNamesArity: [pair(Name, Arity)]
+% -Clauses: [Clause]
+ensureClauses(Clauses) :-
+        maplist(ensureClause, Clauses).
+
 % -GlobalVarDef:      GlobalVarDef
 % -SeenGlobal:        [Name]
 % -NewSeenGlobal:     [Name]
-ensureGlobalVarDef(DataDefNamesArity, globalvardef(Name, TypeVars, Type),
+ensureGlobalVarDef(globalvardef(Name, TypeVars, Type),
                    Seen, [Name|Seen]) :-
         atom(Name),
         \+ member(Name, Seen),
         ensureTypeVars(TypeVars),
-        ensureType(Type, TypeVars, DataDefNamesArity).
+        ensureType(Type, TypeVars).
 
-% -DataDefNamesArity: [pair(Name, Arity)]
 % -GlobalVarDefs:     [GlobalVarDef]
 % -SeenGlobal:        [Name]
-ensureGlobalVarDefs(_, [], _).
-ensureGlobalVarDefs(DataDefNamesArity, [H|T], Seen) :-
-        ensureGlobalVarDef(DataDefNamesArity, H, Seen, NewSeen),
-        ensureGlobalVarDefs(DataDefNamesArity, T, NewSeen).
+ensureGlobalVarDefs([], _).
+ensureGlobalVarDefs([H|T], Seen) :-
+        ensureGlobalVarDef(H, Seen, NewSeen),
+        ensureGlobalVarDefs(T, NewSeen).
 
-% -DataDefNamesArity: [pair(Name, Arity)]
 % -GlobalVarDefs: [GlobalVarDef]
-ensureGlobalVarDefs(DataDefNamesArity, VarDefs) :-
-        ensureGlobalVarDefs(DataDefNamesArity, VarDefs, []).
+ensureGlobalVarDefs(VarDefs) :-
+        ensureGlobalVarDefs(VarDefs, []).
 
-% -DataDefs:      [DataDef]
-% -ClauseDefs:    [ClauseDef]
-% -GlobalVarDefs: [GlobalVarDef]
-% -Clauses:       [Clause]
-ensureProgram(DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
-        dataDefNamesArity(DataDefs, DataDefNamesArity),
-        clauseDefNamesArity(ClauseDefs, ClauseDefNamesArity),
-        ensureDataDefs(DataDefs, DataDefNamesArity),
-        ensureClauseDefs(DataDefNamesArity, ClauseDefs),
-        ensureGlobalVarDefs(DataDefNamesArity, GlobalVarDefs),
-        maplist(ensureClause(ClauseDefNamesArity), Clauses).
+% -LoadedFile: loadedFile (see clauses_util.pl)
+%
+% For now, it assumes there are no modules
+sanitizeFile(loadedFile(DataDefs, ClauseDefs, GlobalVarDefs,
+                        none, [], Clauses)) :-
+        ensureDataDefs(DataDefs),
+        ensureClauseDefs(ClauseDefs),
+        ensureGlobalVarDefs(GlobalVarDefs),
+        ensureClauses(Clauses).
