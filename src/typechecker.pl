@@ -233,9 +233,14 @@ typecheckBody(DataDefs, ClauseDefs, GlobalVarDefs, TypeEnv,
               BodyVarForm, NewTypeEnv) :-
         bodyVarForm(BodyVarForm, Name, Term),
         !,
-        Probe = globalvardef(Name, _, _),
-        member(Probe, GlobalVarDefs),
-        copy_term(Probe, globalvardef(_, _, ExpectedType)),
+        % We intentionally don't freshen type variables here.  If we did, then
+        % each time we accessed the variable, we would be allowed to change the
+        % type, which would be unsound.  Instead, we leave original type variables
+        % in, and allow one instantiation in the program.  I'm honestly not sure
+        % how useful this is because only one instantiation is ever possible with
+        % this, but it's sound anyway.
+        member(globalvardef(Name, _, ExpectedType), GlobalVarDefs),
+
         typeofTerm(DataDefs, ClauseDefs, GlobalVarDefs, TypeEnv,
                    Term, ExpectedType, NewTypeEnv).
 typecheckBody(DataDefs, ClauseDefs, GlobalVarDefs,
