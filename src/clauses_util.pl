@@ -1,5 +1,7 @@
 :- module('clauses_util', [loadFileWithBuiltins/2, writeClauses/2]).
 
+:- use_module('sanitizer.pl', [sanitizeFile/1]).
+
 builtinDataDef(datadef(list, [A], [.(A, list(A)), []])).
 
 builtinDataDefs(DataDefs) :-
@@ -64,18 +66,18 @@ moduleDefsListToOptionModuleDef([ModuleDef], some(ModuleDef)).
 % -Filename
 % -LoadedFile: loadedFile
 %
-% Does not sanitize the file.  Will normalize clauses
-loadFile(
-        Filename,
-        loadedFile(DataDefs, ClauseDefs, GlobalVarDefs,
-                   ModuleDef, UseModules, Clauses)) :-
-        clausesInFile(Filename, Clauses1),
+% Will sanitize the given file and normalize clauses.
+loadFile(Filename, LoadedFile) :-
+        LoadedFile = loadedFile(DataDefs, ClauseDefs, GlobalVarDefs,
+                      ModuleDef, UseModules, Clauses),
+        clausesInFile(Filename, RawClauses),
         partitionBy([isDataDef, isClauseDef, isGlobalVarDef, isModuleDef, isUseModule],
-                    Clauses1,
+                    RawClauses,
                     [DataDefs, ClauseDefs, GlobalVarDefs, ModuleDefsList, UseModules,
-                     RawClauses]),
+                     NonNormalizedClauses]),
         moduleDefsListToOptionModuleDef(ModuleDefsList, ModuleDef),
-        maplist(normalizeClause, RawClauses, Clauses).
+        maplist(normalizeClause, NonNormalizedClauses, Clauses),
+        sanitizeFile(LoadedFile).
 
 isDataDef(datadef(_, _, _)).
 isClauseDef(clausedef(_, _, _)).
