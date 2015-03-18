@@ -201,6 +201,41 @@ ensureGlobalVarDefs([H|T], Seen) :-
 ensureGlobalVarDefs(VarDefs) :-
         ensureGlobalVarDefs(VarDefs, []).
 
+% -Name: Name
+% -Arity: Int
+% -Clause: Clause
+clauseHasNameArity(Name, Arity, :-(Head, _)) :-
+        Head =.. [Name|Params],
+        length(Params, Arity).
+
+clauseDefHasNameArity(Name, Arity, clausedef(Name, _, Params)) :-
+        length(Params, Arity).
+
+% -Clauses:   [Clause]
+% -ClauseDef: ClauseDef
+clauseDefInhabited(Clauses, clausedef(Name, _, Params)) :-
+        length(Params, Arity),
+        member(TestClause, Clauses),
+        once(clauseHasNameArity(Name, Arity, TestClause)).
+
+% -ClauseDefs: [ClauseDef]
+% -Clause: Clause
+clauseHasClauseDef(ClauseDefs, :-(Head, _)) :-
+        Head =.. [Name|Params],
+        length(Params, Arity),
+        member(TestClauseDef, ClauseDefs),
+        once(clauseDefHasNameArity(Name, Arity, TestClauseDef)).
+
+% -Clauses:    [Clause]
+% -ClauseDefs: [ClauseDef]
+clauseDefsInhabited(Clauses, ClauseDefs) :-
+        maplist(clauseDefInhabited(Clauses), ClauseDefs).
+
+% -Clauses:    [Clause]
+% -ClauseDefs: [ClauseDef]
+clausesHaveClauseDef(Clauses, ClauseDefs) :-
+        maplist(clauseHasClauseDef(ClauseDefs), Clauses).
+
 % -LoadedFile: loadedFile (see clauses_util.pl)
 %
 % For now, it assumes there are no modules.
@@ -212,7 +247,14 @@ ensureGlobalVarDefs(VarDefs) :-
 % Ensure that module name matches up with the filename.
 sanitizeFile(loadedFile(DataDefs, ClauseDefs, GlobalVarDefs,
                         _, [], Clauses)) :-
+        % basic syntactic well-formedness
         ensureDataDefs(DataDefs),
         ensureClauseDefs(ClauseDefs),
         ensureGlobalVarDefs(GlobalVarDefs),
-        ensureClauses(Clauses).
+        ensureClauses(Clauses),
+
+        % definitions have matching uses and vice-versa
+        clauseDefsInhabited(Clauses, ClauseDefs),
+        clausesHaveClauseDef(Clauses, ClauseDefs).
+
+% TODO: still need to check module-related things.
