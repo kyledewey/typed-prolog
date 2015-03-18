@@ -290,11 +290,20 @@ typecheckClause(DataDefs, ClauseDefs, GlobalVarDefs, RawClause) :-
 typecheckClausesWithMappings(DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
         maplist(typecheckClause(DataDefs, ClauseDefs, GlobalVarDefs), Clauses).
 
-% -DataDefs:      [DataDef]
-% -ClauseDefs:    [ClauseDef]
-% -GlobalVarDefs: [GlobalVarDef]
-% -Clauses:       [NormalizedClause]
-typecheckClauses(DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
+% -UserDataDefs:      [DataDef]
+% -UserClauseDefs:    [ClauseDef]
+% -UserGlobalVarDefs: [GlobalVarDef]
+% -UserClauses:       [NormalizedClause]
+%
+% Will add in builtins itself.
+typecheckClauses(UserDataDefs, UserClauseDefs, GlobalVarDefs, Clauses) :-
+        % add in builtins
+        builtinDataDefs(BuiltinDataDefs),
+        builtinClauseDefs(BuiltinClauseDefs),
+        append(BuiltinDataDefs, UserDataDefs, DataDefs),
+        append(BuiltinClauseDefs, UserClauseDefs, ClauseDefs),
+
+        % perform typechecking
         constructorToDataDefMapping(DataDefs, DataDefMapping),
         clauseNameArityToClauseDefMapping(ClauseDefs, ClauseDefMapping),
         typecheckClausesWithMappings(DataDefMapping, ClauseDefMapping,

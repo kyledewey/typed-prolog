@@ -203,9 +203,15 @@ ensureGlobalVarDefs(VarDefs) :-
 
 % -LoadedFile: loadedFile (see clauses_util.pl)
 %
-% For now, it assumes there are no modules
+% For now, it assumes there are no modules.
+% TODO: ensure that there are no duplicates in what is exported, and that
+% there are no duplicates in what is imported.  Ensure that we actually
+% define what we claim to export.  Ensure that every clause def has at least
+% one corresponding clause, and that each clause has exactly one corresponding
+% clause def.  Ensuring no duplicates must also extend to constructors.
+% Ensure that module name matches up with the filename.
 sanitizeFile(loadedFile(DataDefs, ClauseDefs, GlobalVarDefs,
-                        none, [], Clauses)) :-
+                        _, [], Clauses)) :-
         ensureDataDefs(DataDefs),
         ensureClauseDefs(ClauseDefs),
         ensureGlobalVarDefs(GlobalVarDefs),

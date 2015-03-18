@@ -35,6 +35,12 @@ setUnion([H|T], Set2, Result) :-
         addSet(Set2, H, TempSet),
         setUnion(T, TempSet, Result).
 
+% -Input: [A]
+% -Item:  A
+% -New:   [A]
+setRemove(Input, Item, New) :-
+        diffEqual(Input, [Item], New).
+
 % -Input:         [A]
 % -SubtractThese: [A]
 % -Output:        [A]

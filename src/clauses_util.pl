@@ -1,4 +1,4 @@
-:- module('clauses_util', [loadFileWithBuiltins/2, writeClauses/2]).
+:- module('clauses_util', [loadFile/2, loadFileWithBuiltins/2, writeClauses/2]).
 
 :- use_module('sanitizer.pl', [sanitizeFile/1]).
 
@@ -46,7 +46,7 @@ clausesInFile(Filename, Clauses) :-
 % ModuleDef: module(Name, [ExportedClause], [ExportedData])
 % UseModule: use_module(FileName, [ExportedClause], [ExportedData])
 % loadedFile([DataDef], [ClauseDef], [GlobalVarDef],
-%            option(ModuleDef), [UseModule], [Clause])
+%            ModuleDef, [UseModule], [Clause])
 
 % -[(A)]
 % -[A]
@@ -58,11 +58,6 @@ partitionBy([H|T], Items, [Group|Rest]) :-
         partition(H, Items, Group, RestItems),
         partitionBy(T, RestItems, Rest).
 
-% -[ModuleDef]
-% -option(ModuleDef)
-moduleDefsListToOptionModuleDef([], none).
-moduleDefsListToOptionModuleDef([ModuleDef], some(ModuleDef)).
-
 % -Filename
 % -LoadedFile: loadedFile
 %
@@ -73,9 +68,8 @@ loadFile(Filename, LoadedFile) :-
         clausesInFile(Filename, RawClauses),
         partitionBy([isDataDef, isClauseDef, isGlobalVarDef, isModuleDef, isUseModule],
                     RawClauses,
-                    [DataDefs, ClauseDefs, GlobalVarDefs, ModuleDefsList, UseModules,
+                    [DataDefs, ClauseDefs, GlobalVarDefs, [ModuleDef], UseModules,
                      NonNormalizedClauses]),
-        moduleDefsListToOptionModuleDef(ModuleDefsList, ModuleDef),
         maplist(normalizeClause, NonNormalizedClauses, Clauses),
         sanitizeFile(LoadedFile).
 
