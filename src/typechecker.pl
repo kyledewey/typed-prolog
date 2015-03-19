@@ -273,8 +273,7 @@ typecheckBody(DataDefs, ClauseDefs, GlobalVarDefs,
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]
 % -GlobalVarDefs:    [GlobalVarDef]
 % -Clause:           Clause
-typecheckClause(DataDefs, ClauseDefs, GlobalVarDefs, RawClause) :-
-        copy_term(RawClause, :-(Head, Body)),
+typecheckClause(DataDefs, ClauseDefs, GlobalVarDefs, :-(Head, Body)) :-
         Head =.. [Name|Params],
         length(Params, Arity),
         getClauseDefExpectedTypes(ClauseDefs, Name, Arity, Expected),
