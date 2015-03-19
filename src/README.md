@@ -1,6 +1,8 @@
 Todo list:
 
-1. Add support for modules.
+1. Fix bug where we will allow a type definition that doesn't use all the type
+   parameters in a definition, as with just plain `list`.  This is recognized as
+   a valid type, though attempts to use it won't work (as expected).
 
 Done:
 
@@ -13,3 +15,4 @@ Done:
 6. Order `call_lambda`s so that versions with the same arity are next to each other.
 7. Add support for global variables which can be translated to different representations
    for different engines.
+8. Add support for modules.

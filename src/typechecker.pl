@@ -308,12 +308,15 @@ builtinDataDef(datadef(list, [A], [.(A, list(A)), []])).
 builtinDataDefs(DataDefs) :-
         findall(D, builtinDataDef(D), DataDefs).
 
+builtinClauseDef(clausedef(var, [A], [A])).
+builtinClauseDef(clausedef(atom, [A], [A])).
 builtinClauseDef(clausedef(>, [], [int, int])).
 builtinClauseDef(clausedef(<, [], [int, int])).
 builtinClauseDef(clausedef(=<, [], [int, int])).
 builtinClauseDef(clausedef(>=, [], [int, int])).
 builtinClauseDef(clausedef(=, [A], [A, A])).
 builtinClauseDef(clausedef(==, [A], [A, A])).
+builtinClauseDef(clausedef(is_set, [A], [list(A)])).
 
 builtinClauseDefs(ClauseDefs) :-
         findall(C, builtinClauseDef(C), ClauseDefs).
