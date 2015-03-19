@@ -78,6 +78,10 @@ freshInt(N) :-
         NewN is N + 1,
         setvar(counter, NewN).
 
+clausedef(yolo_UNSAFE_test, [], [list(int)]).
+yolo_UNSAFE_test(Ints) :-
+        bagof(X, member(X, [1,2,3]), Ints).
+
 clausedef(runTests, [], []).
 runTests :-
         plus1([1,2,3], Res1),
@@ -98,4 +102,7 @@ runTests :-
         freshInt(N1),
         N1 == 0,
         freshInt(N2),
-        N2 == 1.
+        N2 == 1,
+
+        yolo_UNSAFE_test(Ints),
+        Ints == [1,2,3].

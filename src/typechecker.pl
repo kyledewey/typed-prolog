@@ -269,6 +269,15 @@ typecheckBody(DataDefs, ClauseDefs, GlobalVarDefs,
         typeofTerms(DataDefs, ClauseDefs, GlobalVarDefs, TypeEnv,
                     Params, ExpectedTypes, NewTypeEnv).
 
+% -Name
+%
+% Succeeds if the given clause name is marked unsafe
+markedUnsafe(Name) :-
+        UnsafeMarker = 'yolo_UNSAFE_',
+        atom_codes(Name, NameList),
+        atom_codes(UnsafeMarker, UnsafeList),
+        listContainsList(NameList, UnsafeList).
+
 % -DataDefMapping:   [pair(Name, DataDef)]
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]
 % -GlobalVarDefs:    [GlobalVarDef]
@@ -279,8 +288,10 @@ typecheckClause(DataDefs, ClauseDefs, GlobalVarDefs, :-(Head, Body)) :-
         getClauseDefExpectedTypes(ClauseDefs, Name, Arity, Expected),
         typeofTerms(DataDefs, ClauseDefs, GlobalVarDefs, [],
                     Params, Expected, TypeEnv),
-        typecheckBody(DataDefs, ClauseDefs, GlobalVarDefs,
-                      TypeEnv, Body, _).
+        (markedUnsafe(Name) ->
+            true;
+            typecheckBody(DataDefs, ClauseDefs, GlobalVarDefs,
+                          TypeEnv, Body, _)).
 
 % -DataDefMapping:   [pair(Name, DataDef)]
 % -ClauseDefMapping: [pair(pair(Name, Int), ClauseDef)]

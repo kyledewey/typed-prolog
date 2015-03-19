@@ -1,7 +1,8 @@
 :- module('util', [memberEqual/2, diffEqual/3, makeDistinctEqual/2,
                    bodyAtomForm/1, bodyPairForm/3, bodyPairForm/4,
                    addSet/3, setUnion/3, memberEqual_/2, sortItems/4,
-                   bodyVarForm/3, bodyVarForm/4, appendDiffList/3]).
+                   bodyVarForm/3, bodyVarForm/4, appendDiffList/3,
+                   listBeginsWith/2, listContainsList/2]).
 
 % -Probe: A
 % -List:  [A]
@@ -176,3 +177,19 @@ appendDiffList([], List, List).
 appendDiffList([H|T], [H|Rest], Output) :-
         appendDiffList(T, Rest, Output).
 
+% -Source:     [A]
+% -BeginsWith: [A]
+%
+% Succeeds if Source begins with BeginsWith, using unification (=)
+listBeginsWith(_, []).
+listBeginsWith([H|ST], [H|BWT]) :-
+        listBeginsWith(ST, BWT).
+
+% -Source: [A]
+% -Probe:  [A]
+%
+% Succeeds if the given list contains the given probe, using unification.
+listContainsList(List, Probe) :-
+        listBeginsWith(List, Probe).
+listContainsList([_|T], Probe) :-
+        listContainsList(T, Probe).
