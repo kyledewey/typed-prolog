@@ -91,6 +91,7 @@ ensureType(TypeVar, TypeVarsInScope) :-
         !,
         memberEqual(TypeVar, TypeVarsInScope).
 ensureType(int, _) :- !.
+ensureType(atom, _) :- !.
 ensureType(relation(Types), TypeVarsInScope) :-
         !,
         ensureTypes(Types, TypeVarsInScope).

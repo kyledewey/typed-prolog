@@ -82,6 +82,10 @@ clausedef(yolo_UNSAFE_test, [], [list(int)]).
 yolo_UNSAFE_test(Ints) :-
         bagof(X, member(X, [1,2,3]), Ints).
 
+clausedef(test_atom, [], [atom]).
+test_atom(Atom) :-
+        Atom = hello.
+        
 clausedef(runTests, [], []).
 runTests :-
         plus1([1,2,3], Res1),
@@ -105,4 +109,7 @@ runTests :-
         N2 == 1,
 
         yolo_UNSAFE_test(Ints),
-        Ints == [1,2,3].
+        Ints == [1,2,3],
+
+        test_atom(Hello),
+        Hello == hello.

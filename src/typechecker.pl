@@ -183,8 +183,11 @@ typeofTerm(DataDefs, ClauseDefs, GlobalVarDefs,
            TypeEnv, Atom, Type, NewTypeEnv) :-
         atom(Atom),
         !,
-        constructorType(DataDefs, ClauseDefs, GlobalVarDefs, TypeEnv,
-                        Atom, [], Type, NewTypeEnv).
+        (constructorType(DataDefs, ClauseDefs, GlobalVarDefs, TypeEnv,
+                         Atom, [], Type, NewTypeEnv) ->
+                         true;
+                         (TypeEnv = NewTypeEnv,
+                          Type = atom)).
 typeofTerm(_, _, _, TypeEnv, N, int, TypeEnv) :-
         number(N),
         !.
