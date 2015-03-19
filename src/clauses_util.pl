@@ -1,21 +1,6 @@
-:- module('clauses_util', [loadFile/2, loadFileWithBuiltins/2, writeClauses/2]).
+:- module('clauses_util', [loadFile/2, writeClauses/2]).
 
 :- use_module('sanitizer.pl', [sanitizeFile/1]).
-
-builtinDataDef(datadef(list, [A], [.(A, list(A)), []])).
-
-builtinDataDefs(DataDefs) :-
-        findall(D, builtinDataDef(D), DataDefs).
-
-builtinClauseDef(clausedef(>, [], [int, int])).
-builtinClauseDef(clausedef(<, [], [int, int])).
-builtinClauseDef(clausedef(=<, [], [int, int])).
-builtinClauseDef(clausedef(>=, [], [int, int])).
-builtinClauseDef(clausedef(=, [A], [A, A])).
-builtinClauseDef(clausedef(==, [A], [A, A])).
-
-builtinClauseDefs(ClauseDefs) :-
-        findall(C, builtinClauseDef(C), ClauseDefs).
 
 % -InputClause:  Clause
 % -OutputClause: Head :- Body.
@@ -58,41 +43,38 @@ partitionBy([H|T], Items, [Group|Rest]) :-
         partition(H, Items, Group, RestItems),
         partitionBy(T, RestItems, Rest).
 
+% -FileName: FileName
+% -ExpectedModuleName: Atom
+expectedModuleName(FileName, ExpectedModuleName) :-
+        file_base_name(FileName, BaseName),
+        file_name_extension(ExpectedModuleName, 'pl', BaseName).
+
 % -Filename
 % -LoadedFile: loadedFile
 %
 % Will sanitize the given file and normalize clauses.
 loadFile(Filename, LoadedFile) :-
         LoadedFile = loadedFile(DataDefs, ClauseDefs, GlobalVarDefs,
-                      ModuleDef, UseModules, Clauses),
+                                ModuleDef, UseModules, Clauses),
         clausesInFile(Filename, RawClauses),
-        partitionBy([isDataDef, isClauseDef, isGlobalVarDef, isModuleDef, isUseModule],
+        
+        partitionBy([isDataDef, isClauseDef, isGlobalVarDef,
+                     isModuleDef(Filename), isUseModule],
                     RawClauses,
-                    [DataDefs, ClauseDefs, GlobalVarDefs, [ModuleDef], UseModules,
-                     NonNormalizedClauses]),
+                    [DataDefs, ClauseDefs, GlobalVarDefs,
+                     [ModuleDef], UseModules, NonNormalizedClauses]),
         maplist(normalizeClause, NonNormalizedClauses, Clauses),
         sanitizeFile(LoadedFile).
 
 isDataDef(datadef(_, _, _)).
 isClauseDef(clausedef(_, _, _)).
 isGlobalVarDef(globalvardef(_, _, _)).
-isModuleDef(module(_, _, _)).
 isUseModule(use_module(_, _, _)).
 
-% -Filename
-% -LoadedFile
-%
-% All the resulting clauses have :- in the head.  Includes builtins
-loadFileWithBuiltins(
-        Filename,
-        loadedFile(DataDefs, ClauseDefs, GlobalVarDefs, ModuleDef,
-                   UseModules, Clauses)) :-
-        loadFile(Filename, loadedFile(UserDataDefs, UserClauseDefs, GlobalVarDefs,
-                                      ModuleDef, UseModules, Clauses)),
-        builtinDataDefs(BuiltinDataDefs),
-        builtinClauseDefs(BuiltinClauseDefs),
-        append(BuiltinDataDefs, UserDataDefs, DataDefs),
-        append(BuiltinClauseDefs, UserClauseDefs, ClauseDefs).
+% -FileName
+% -ModuleDef
+isModuleDef(FileName, module(Name, _, _)) :-
+        expectedModuleName(FileName, Name).
 
 % -What: Clause
 % -To:   Stream

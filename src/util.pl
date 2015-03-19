@@ -1,7 +1,7 @@
 :- module('util', [memberEqual/2, diffEqual/3, makeDistinctEqual/2,
                    bodyAtomForm/1, bodyPairForm/3, bodyPairForm/4,
                    addSet/3, setUnion/3, memberEqual_/2, sortItems/4,
-                   bodyVarForm/3, bodyVarForm/4]).
+                   bodyVarForm/3, bodyVarForm/4, appendDiffList/3]).
 
 % -Probe: A
 % -List:  [A]
@@ -168,3 +168,11 @@ sortItems(Items, MapRelation, CmpRelation, Sorted) :-
         maplist(mapPair(MapRelation), Items, ItemPairs),
         sortPairs(ItemPairs, CmpRelation, SortedPairs),
         maplist(fst, SortedPairs, Sorted).
+
+% -What:   [A]
+% -Input:  [A]
+% -Output: [A]
+appendDiffList([], List, List).
+appendDiffList([H|T], [H|Rest], Output) :-
+        appendDiffLIst(T, Rest, Output).
+

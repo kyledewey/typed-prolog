@@ -1,5 +1,6 @@
-clausedef(map, [A, B], [list(A), relation([A, B]), list(B)]).
+module(test, [], []).
 
+clausedef(map, [A, B], [list(A), relation([A, B]), list(B)]).
 map([], _, []).
 map([HA|TA], F, [HB|TB]) :-
         call(F, HA, HB),

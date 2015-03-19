@@ -1,5 +1,6 @@
 :- module('typechecker', [typecheckClauses/4]).
 
+
 :- use_module('util.pl').
 
 % -DataDef:     DataDef
@@ -289,6 +290,21 @@ typecheckClause(DataDefs, ClauseDefs, GlobalVarDefs, RawClause) :-
 % -Clauses:          [Clause]
 typecheckClausesWithMappings(DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
         maplist(typecheckClause(DataDefs, ClauseDefs, GlobalVarDefs), Clauses).
+
+builtinDataDef(datadef(list, [A], [.(A, list(A)), []])).
+
+builtinDataDefs(DataDefs) :-
+        findall(D, builtinDataDef(D), DataDefs).
+
+builtinClauseDef(clausedef(>, [], [int, int])).
+builtinClauseDef(clausedef(<, [], [int, int])).
+builtinClauseDef(clausedef(=<, [], [int, int])).
+builtinClauseDef(clausedef(>=, [], [int, int])).
+builtinClauseDef(clausedef(=, [A], [A, A])).
+builtinClauseDef(clausedef(==, [A], [A, A])).
+
+builtinClauseDefs(ClauseDefs) :-
+        findall(C, builtinClauseDef(C), ClauseDefs).
 
 % -UserDataDefs:      [DataDef]
 % -UserClauseDefs:    [ClauseDef]

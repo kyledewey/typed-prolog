@@ -236,17 +236,38 @@ clauseDefsInhabited(Clauses, ClauseDefs) :-
 clausesHaveClauseDef(Clauses, ClauseDefs) :-
         maplist(clauseHasClauseDef(ClauseDefs), Clauses).
 
+% -UseModule:     UseModule
+% -ClausesInput:  [/(Name, Arity)]
+% -DataInput:     [Name]
+% -ClausesOutput: [/(Name, Arity)]
+% -DataOutput:    [Name]
+moduleUseClausesData(use_module(_, ImportedClauses, ImportedData),
+                     ClausesInput, DataInput,
+                     ClausesOutput, DataOutput) :-
+        appendDiffList(ImportedClauses, ClausesInput, ClausesOutput),
+        appendDiffList(ImportedData, DataInput, DataOutput).
+
+% -UseModules:    [UseModule]
+% -ClausesInput:  [/(Name, Arity)]
+% -DataInput:     [Name]
+% -ClausesOutput: [/(Name, Arity)]
+% -DataOutput:    [Name]
+moduleUsesClausesData([], Clauses, Data, Clauses, Data).
+moduleUsesClausesData([H|T], ClausesInput, DataInput, ClausesOutput, DataOutput) :-
+        moduleUseClausesData(H, ClausesInput, DataInput, TempClauses, TempData),
+        moduleUsesClausesData(T, TempClauses, TempData, ClausesOutput, DataOutput).
+
+% -UseModules: [UseModule]
+% -Clauses:    [/(Name, Arity)]
+% -Data:       [Name]
+moduleUsesClausesData(UseModules, Clauses, Data) :-
+        moduleUsesClausesData(UseModules, Clauses, Data, [], []).
+
 % -LoadedFile: loadedFile (see clauses_util.pl)
-%
-% For now, it assumes there are no modules.
-% TODO: ensure that there are no duplicates in what is exported, and that
-% there are no duplicates in what is imported.  Ensure that we actually
-% define what we claim to export.  Ensure that every clause def has at least
-% one corresponding clause, and that each clause has exactly one corresponding
-% clause def.  Ensuring no duplicates must also extend to constructors.
-% Ensure that module name matches up with the filename.
-sanitizeFile(loadedFile(DataDefs, ClauseDefs, GlobalVarDefs,
-                        _, [], Clauses)) :-
+sanitizeFile(
+        loadedFile(DataDefs, ClauseDefs, GlobalVarDefs,
+                   module(_, ExportedClauses, ExportedData),
+                   ModuleUses, Clauses)) :-
         % basic syntactic well-formedness
         ensureDataDefs(DataDefs),
         ensureClauseDefs(ClauseDefs),
@@ -255,6 +276,13 @@ sanitizeFile(loadedFile(DataDefs, ClauseDefs, GlobalVarDefs,
 
         % definitions have matching uses and vice-versa
         clauseDefsInhabited(Clauses, ClauseDefs),
-        clausesHaveClauseDef(Clauses, ClauseDefs).
+        clausesHaveClauseDef(Clauses, ClauseDefs),
 
-% TODO: still need to check module-related things.
+        % no duplicate exports exist
+        is_set(ExportedClauses),
+        is_set(ExportedData),
+
+        % no duplicate imports exist
+        moduleUsesClausesData(ModuleUses, ImportedClauses, ImportedData),
+        is_set(ImportedClauses),
+        is_set(ImportedData).

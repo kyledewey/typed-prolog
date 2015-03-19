@@ -60,7 +60,7 @@ moduleThatExportsConstructor(
 
         % ensure that the file actually exported the things claimed,
         % which includes what we're looking for
-        LoadedFile = loadedFile(DataDefs, _, _, some(module(_, _, ActualExports)), _, _),
+        LoadedFile = loadedFile(DataDefs, _, _, module(_, _, ActualExports), _, _),
         maplist(member_(ActualExports), ExportedData),
 
         % see if any of the exported datadefs has the constructor we are looking for
@@ -106,7 +106,7 @@ moduleThatExportsClause(AllModules, [_|T], ClauseName, Arity, Module) :-
 % This is from the standpoint of the current module.
 translateCurrentClauseName(
         ModuleId, 
-        loadedFile(_, ClauseDefs, _, some(module(_, ExportedClauses, _)), ModulesUsed, _),
+        loadedFile(_, ClauseDefs, _, module(_, ExportedClauses, _), ModulesUsed, _),
         Modules, InputName, Arity, TranslatedName) :-
 
         % Valid possibilities:
@@ -123,7 +123,9 @@ translateCurrentClauseName(
              mangledName(AccessModifier, ModuleId, InputName, TranslatedName));
             (moduleThatExportsClause(Modules, ModulesUsed, InputName, Arity,
                                      loadedModule(_, OtherModuleId, _)),
-             mangledName(public, OtherModuleId, InputName, TranslatedName))).
+             mangledName(public, OtherModuleId, InputName, TranslatedName))),
+        !.
+translateCurrentClauseName(_, _, _, Name, _, Name). % TODO: check if builtin
 
 % -Alternative
 % -Name: Atom
@@ -149,9 +151,9 @@ datadefWithConstructor([_|T], ConstructorName, Result) :-
 % -Modules:         [loadedModule]
 % -ConstructorName
 % -OutputName
-translatedUsedConstructorName(
+translateUsedConstructorName(
         ModuleId,
-        loadedFile(DataDefs, _, _, some(module(_, _, ExportedData)), ModulesUsed, _),
+        loadedFile(DataDefs, _, _, module(_, _, ExportedData), ModulesUsed, _),
         Modules, ConstructorName, TranslatedName) :-
         
         % Valid possibilities:
@@ -168,7 +170,9 @@ translatedUsedConstructorName(
              mangledName(AccessModifier, ModuleId, ConstructorName, TranslatedName));
             (moduleThatExportsConstructor(Modules, ModulesUsed, ConstructorName,
                                           loadedModule(_, OtherModuleId, _)),
-             mangledName(public, OtherModuleId, ConstructorName, TranslatedName))).
+             mangledName(public, OtherModuleId, ConstructorName, TranslatedName))),
+        !.
+translateUsedConstructorName(_, _, _, Name, Name). % TODO: check if builtin
 
 % -TypeMapping: [pair(OrigName, MangledName)]
 % -InputTypes:  [Type]
@@ -190,9 +194,17 @@ translateType(TypeMapping, relation(Types), relation(NewTypes)) :-
 translateType(TypeMapping, ConstructorType, NewConstructorType) :-
         ConstructorType =.. [OrigName|OrigTypes],
         !,
-        member(pair(OrigName, NewName), TypeMapping),
+        typeNameFromTypeMapping(TypeMapping, OrigName, NewName),
         translateTypes(TypeMapping, OrigTypes, NewTypes),
         NewConstructorType =.. [NewName|NewTypes].
+
+% -TypeMapping: [pair(OrigName, MangledName)]
+% -OrigName:    Name
+% -MangledName: Name
+typeNameFromTypeMapping(TypeMapping, OrigName, MangledName) :-
+        member(pair(OrigName, MangledName), TypeMapping),
+        !.
+typeNameFromTypeMapping(_, Name, Name). % TODO: better handling for builtins
 
 % -AllModules:  [LoadedModule]
 % -ModuleUse:   UseModule
@@ -227,7 +239,7 @@ mangledNamePair(AccessModifier, ModuleId, OriginalName, pair(OriginalName, Mangl
 makeTypeMapping(AllModules,
                 loadedModule(_, ModuleId, LoadedFile),
                 TypeMapping) :-
-        LoadedFile = loadedFile(DataDefs, _, _, some(module(_, _, MyExports)),
+        LoadedFile = loadedFile(DataDefs, _, _, module(_, _, MyExports),
                                 ModulesUsed, _),
         % grab everything we declared to be public                                
         maplist(mangledNamePair(public, ModuleId), MyExports, Public),
@@ -419,8 +431,8 @@ translateTerm(AllModules, ModuleId, CurrentFile,
               Structure, TranslatedStructure) :-
         Structure =.. [Name|Params],
         !,
-        translateUsedConstructor(ModuleId, CurrentFile, AllModules,
-                                 Name, NewName),
+        translateUsedConstructorName(ModuleId, CurrentFile, AllModules,
+                                     Name, NewName),
         translateTerms(AllModules, ModuleId, CurrentFile, Params, NewParams),
         TranslatedStructure =.. [NewName|NewParams].
 
@@ -496,10 +508,10 @@ translateModule(AllModules, Module, TranslatedDataDefs, TranslatedClauseDefs,
         % extract out subcomponents
         Module = loadedModule(_, ModuleId, LoadedFile),
         LoadedFile = loadedFile(DataDefs, ClauseDefs, GlobalVarDefs, ModuleDef, _, Clauses),
-        ModuleDef = some(module(_, ExportedClauses, ExportedDataTypes)),
+        ModuleDef = module(_, ExportedClauses, ExportedDataTypes),
 
         % translate the data defs
-        makeTypeMapping(AllModules, Module, TypeMapping),
+        makeTypeMapping(AllModules, Module, TypeMapping), !,
         translateDataDefs(TypeMapping, ModuleId, ExportedDataTypes,
                           DataDefs, TranslatedDataDefs),
         
@@ -576,7 +588,8 @@ loadModule(RelativeFileName, AlreadyLoaded, PartiallyLoaded, NewLoaded) :-
 handleModules(FileName,
               TranslatedDataDefs, TranslatedClauseDefs,
               TranslatedGlobalVarDefs, TranslatedClauses) :-
-        loadModule(FileName, [], [], LoadedModules),
+        nb_setval(module_counter, 0),
+        loadModule(FileName, [], [], LoadedModules), !,
         translateModules(LoadedModules,
                          TranslatedDataDefs, TranslatedClauseDefs,
                          TranslatedGlobalVarDefs, TranslatedClauses).
