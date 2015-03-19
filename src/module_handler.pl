@@ -67,7 +67,7 @@ moduleThatExportsConstructor(
         member(ExportedDataDefNameProbe, ExportedData),
         ProbeDataDef = datadef(ExportedDataDefNameProbe, _, _),
         member(ProbeDataDef, DataDefs),
-        datadefConstructorNames(DataDefs, Names),
+        datadefConstructorNames(ProbeDataDef, Names),
         member(ConstructorName, Names).
 moduleThatExportsConstructor(AllModules, [_|T], ConstructorName, Module) :-
         moduleThatExportsConstructor(AllModules, T, ConstructorName, Module).
@@ -91,7 +91,7 @@ moduleThatExportsClause(
 
         % ensure that the file actually exports everything we are pulling in,
         % which includes the target clause.
-        LoadedFile = loadedFile(_, _, _, option(module(_, ActuallyExports, _)), _, _),
+        LoadedFile = loadedFile(_, _, _, module(_, ActuallyExports, _), _, _),
         maplist(member_(ActuallyExports), ExportedClauses).
 moduleThatExportsClause(AllModules, [_|T], ClauseName, Arity, Module) :-
         moduleThatExportsClause(AllModules, T, ClauseName, Arity, Module).

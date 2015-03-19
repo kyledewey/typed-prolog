@@ -1,6 +1,5 @@
 :- module('typechecker', [typecheckClauses/4]).
 
-
 :- use_module('util.pl').
 
 % -DataDef:     DataDef

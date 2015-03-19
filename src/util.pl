@@ -174,5 +174,5 @@ sortItems(Items, MapRelation, CmpRelation, Sorted) :-
 % -Output: [A]
 appendDiffList([], List, List).
 appendDiffList([H|T], [H|Rest], Output) :-
-        appendDiffLIst(T, Rest, Output).
+        appendDiffList(T, Rest, Output).
 
