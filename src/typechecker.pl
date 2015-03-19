@@ -317,6 +317,7 @@ builtinClauseDef(clausedef(>=, [], [int, int])).
 builtinClauseDef(clausedef(=, [A], [A, A])).
 builtinClauseDef(clausedef(==, [A], [A, A])).
 builtinClauseDef(clausedef(is_set, [A], [list(A)])).
+builtinClauseDef(clausedef(member, [A], [A, list(A)])).
 
 builtinClauseDefs(ClauseDefs) :-
         findall(C, builtinClauseDef(C), ClauseDefs).
