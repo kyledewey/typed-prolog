@@ -314,6 +314,7 @@ builtinClauseDef(clausedef(>, [], [int, int])).
 builtinClauseDef(clausedef(<, [], [int, int])).
 builtinClauseDef(clausedef(=<, [], [int, int])).
 builtinClauseDef(clausedef(>=, [], [int, int])).
+builtinClauseDef(clausedef(\=, [A], [A, A])).
 builtinClauseDef(clausedef(=, [A], [A, A])).
 builtinClauseDef(clausedef(==, [A], [A, A])).
 builtinClauseDef(clausedef(is_set, [A], [list(A)])).

@@ -28,6 +28,7 @@ builtinClauseDefs(
          defclause(=<, [], [intType, intType]),
          defclause(>=, [], [intType, intType]),
          defclause(=, [A], [A, A]),
+         defclause(\=, [A], [A, A]),
          defclause(==, [A], [A, A]),
          defclause(is_set, [A], [constructorType(list, [A])]),
          defclause(member, [A], [A, constructorType(list, [A])]),
