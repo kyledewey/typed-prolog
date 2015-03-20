@@ -1,4 +1,6 @@
-module(bootstrap_syntax, [], []).
+module(bootstrap_syntax, [], [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
+                              typeConstructor, defdata, clauseclause, defglobalvar,
+                              defmodule, def_use_module, loadedFile]).
 
 use_module('io.pl', [read_clauses_from_file/3], []).
 use_module('common.pl', [map/3, forall/2, setContains/2], [pair]).
@@ -23,12 +25,12 @@ datadef(body, [], [body_is(expLhs, exp),
 datadef(type, [], [intType, atomType, relationType(list(type)),
                    constructorType(atom, list(type))]).
 
-datadef(defclause, [], [defclause(atom, list(int), list(type))]).
+datadef(defclause, [], [defclause(atom, list(type), list(type))]).
 datadef(typeConstructor, [], [typeConstructor(atom, list(type))]).
 
-datadef(defdata, [], [defdata(atom, list(int), list(typeConstructor))]).
+datadef(defdata, [], [defdata(atom, list(type), list(typeConstructor))]).
 datadef(clauseclause, [], [clauseclause(atom, list(term), body)]).
-datadef(defglobalvar, [], [defglobalvar(atom, list(int), type)]).
+datadef(defglobalvar, [], [defglobalvar(atom, list(type), type)]).
 datadef(defmodule, [], [defmodule(atom, list(pair(atom, int)), list(atom))]).
 datadef(def_use_module, [], [def_use_module(atom, list(pair(atom, int)), list(atom))]).
 datadef(loadedFile, [], [loadedFile(defmodule, list(def_use_module),
@@ -135,7 +137,7 @@ yolo_UNSAFE_translate_term(Num, term_num(Num)) :-
         number(Num),
         !.
 yolo_UNSAFE_translate_term(Input, term_lambda(NewParams, NewBody)) :-
-        Input = lambda(Params, Body),
+        Input =.. [lambda, Params, Body], % differentiate from metalanguage lambdas
         !,
         yolo_UNSAFE_translate_terms(Params, NewParams),
         yolo_UNSAFE_translate_body(Body, NewBody).
