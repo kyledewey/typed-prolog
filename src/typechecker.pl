@@ -318,6 +318,8 @@ builtinClauseDef(clausedef(=, [A], [A, A])).
 builtinClauseDef(clausedef(==, [A], [A, A])).
 builtinClauseDef(clausedef(is_set, [A], [list(A)])).
 builtinClauseDef(clausedef(member, [A], [A, list(A)])).
+builtinClauseDef(clausedef(copy_term, [A], [A, A])).
+builtinClauseDef(clausedef(append, [A], [list(A), list(A), list(A)])).
 
 builtinClauseDefs(ClauseDefs) :-
         findall(C, builtinClauseDef(C), ClauseDefs).
