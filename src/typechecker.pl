@@ -320,6 +320,8 @@ builtinClauseDef(clausedef(is_set, [A], [list(A)])).
 builtinClauseDef(clausedef(member, [A], [A, list(A)])).
 builtinClauseDef(clausedef(copy_term, [A], [A, A])).
 builtinClauseDef(clausedef(append, [A], [list(A), list(A), list(A)])).
+builtinClauseDef(clausedef(length, [A], [list(A), int])).
+builtinClauseDef(clausedef(atom_codes, [], [atom, list(int)])).
 
 builtinClauseDefs(ClauseDefs) :-
         findall(C, builtinClauseDef(C), ClauseDefs).

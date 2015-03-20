@@ -1,5 +1,8 @@
 module(common, [map/3, filter/3, foldLeft/4, forall/2,
-                setContains/2, flatMap/3, foldRight/4], [pair, option]).
+                setContains/2, flatMap/3, foldRight/4,
+                zip/3, find/3, beginsWith/2, contains/2,
+                atomContains/2],
+                [pair, option]).
 
 datadef(pair, [A, B], [pair(A, B)]).
 datadef(option, [A], [some(A), none]).
@@ -45,6 +48,13 @@ forall([H|T], Relation) :-
         call(Relation, H),
         forall(T, Relation).
 
+% unlike the usual definition, this will fail if the two input lists
+% are not of the same length.
+clausedef(zip, [A, B], [list(A), list(B), list(pair(A, B))]).
+zip([], [], []).
+zip([H1|T1], [H2|T2], [pair(H1, H2)|Rest]) :-
+        zip(T1, T2, Rest).
+
 % Compares using equality instead of unification
 clausedef(setContains, [A], [list(A), A]).
 setContains([H|_], Item) :-
@@ -52,3 +62,27 @@ setContains([H|_], Item) :-
 setContains([_|T], Item) :-
         setContains(T, Item).
 
+clausedef(find, [A], [list(A), relation([A]), option(A)]).
+find([], _, none).
+find([H|_], Relation, some(H)) :-
+        call(Relation, H).
+find([_|T], Relation, Result) :-
+        find(T, Relation, Result).
+
+% compares using unification
+clausedef(beginsWith, [A], [list(A), list(A)]).
+beginsWith(_, []).
+beginsWith([H|T1], [H|T2]) :-
+        beginsWith(T1, T2).
+
+clausedef(contains, [A], [list(A), list(A)]).
+contains(List, Probe) :-
+        beginsWith(List, Probe).
+contains([_|T], Probe) :-
+        contains(T, Probe).
+
+clausedef(atomContains, [], [atom, atom]).
+atomContains(Original, Probe) :-
+        atom_codes(Original, OriginalList),
+        atom_codes(Probe, ProbeList),
+        contains(OriginalList, ProbeList).

@@ -12,6 +12,7 @@ Todo list:
        If you want to combine raw and non-raw terms, then you'll have to use variables
        as intermediaries, as with `Cooked = cooked(1, 2), Raw = yolo_UNSAFE_raw_term(foo(Cooked))`.
 3. Allow for blanket imports.
+4. User-facing syntax relations should just be `relation(A, B)`, not `relation([A, B])`
 
 Done:
 

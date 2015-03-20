@@ -76,7 +76,7 @@ makeDistinctEqual([H|T], Seen, Result) :-
 % Succeeds if it's an atom form, like true or false
 bodyAtomForm(InputBody) :-
         atom(InputBody),
-        member(InputBody, [true, fail, false]).
+        member(InputBody, [true, fail, false, '!']).
 
 % -InputBody: Body
 % -Name:      Name
