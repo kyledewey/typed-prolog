@@ -1,7 +1,7 @@
 module(common, [map/3, filter/3, foldLeft/4, forall/2,
                 setContains/2, flatMap/3, foldRight/4,
                 zip/3, find/3, beginsWith/2, contains/2,
-                atomContains/2],
+                atomContains/2, notMember/2],
                 [pair, option]).
 
 datadef(pair, [A, B], [pair(A, B)]).
@@ -80,6 +80,10 @@ contains(List, Probe) :-
         beginsWith(List, Probe).
 contains([_|T], Probe) :-
         contains(T, Probe).
+
+clausedef(notMember, [A], [A, list(A)]).
+notMember(A, List) :-
+        forall(List, lambda([L], A \= L)).
 
 clausedef(atomContains, [], [atom, atom]).
 atomContains(Original, Probe) :-
