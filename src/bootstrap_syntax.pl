@@ -1,45 +1,43 @@
-module(bootstrap_syntax, [], [op, exp, expLhs, term, bodyPairOp, body,
-                              type, clausedef, typeConstructor, datadef,
-                              clause]).
+module(bootstrap_syntax, [], []).
 
-use_module('io.pl', [yolo_UNSAFE_open_file/3, yolo_UNSAFE_close_file], [stream, mode]).
+use_module('io.pl', [read_clauses_from_file/3], []).
 use_module('common.pl', [map/3, forall/2, setContains/2], [pair]).
 
 % BEGIN AST DEFINITION
 %
 % The whole int hackery works because variables will never be instantiated.
 datadef(op, [], [plus, minus, mul, div, min, max]).
-datadef(exp, [], [exp_num(int), binop(exp, op, exp)]).
+datadef(exp, [], [exp_var(int), exp_num(int), binop(exp, op, exp)]).
 datadef(expLhs, [], [lhs_var(int), lhs_num(int)]).
 datadef(term, [], [term_var(int), term_num(int),
                    term_lambda(list(term), body),
                    term_constructor(atom, list(term))]).
 
-datadef(bodyPairOp, [], [',', ';', '->']).
-datadef(body, [], [is(expLhs, exp),
-                   setvar(atom, term), getvar(atom, term),
+datadef(bodyPairOp, [], [and, or, implies]).
+datadef(body, [], [body_is(expLhs, exp),
+                   body_setvar(atom, term), body_getvar(atom, term),
                    bodyPair(body, bodyPairOp, body),
                    higherOrderCall(term, list(term)),
-                   firstOrderCall(term, list(term))]).
+                   firstOrderCall(atom, list(term))]).
 
 datadef(type, [], [intType, atomType, relationType(list(type)),
                    constructorType(atom, list(type))]).
 
-datadef(clausedef, [], [clausedef(atom, list(int), list(type))]).
+datadef(defclause, [], [defclause(atom, list(int), list(type))]).
 datadef(typeConstructor, [], [typeConstructor(atom, list(type))]).
 
-datadef(datadef, [], [datadef(atom, list(int), list(typeConstructor))]).
-datadef(clause, [], [clause(atom, list(term), body)]).
-datadef(globalvardef, [], [globalvardef(atom, list(int), type)]).
-datadef(module, [], [module(atom, list(pair(atom, int)), list(atom))]).
-datadef(use_module, [], [use_module(atom, list(pair(atom, int)), list(atom))]).
-datadef(loadedFile, [], [loadedFile(module, list(use_module),
-                                    list(datadef), list(clausedef), list(globalvardef),
-                                    list(clause))]).
+datadef(defdata, [], [defdata(atom, list(int), list(typeConstructor))]).
+datadef(clauseclause, [], [clauseclause(atom, list(term), body)]).
+datadef(defglobalvar, [], [defglobalvar(atom, list(int), type)]).
+datadef(defmodule, [], [defmodule(atom, list(pair(atom, int)), list(atom))]).
+datadef(def_use_module, [], [def_use_module(atom, list(pair(atom, int)), list(atom))]).
+datadef(loadedFile, [], [loadedFile(defmodule, list(def_use_module),
+                                    list(defdata), list(defclause), list(defglobalvar),
+                                    list(clauseclause))]).
 % END AST DEFINITION
-datadef(readclause, [], [readModule(module), readUseModule(use_module),
-                         readDataDef(datadef), readClauseDef(clausedef),
-                         readGlobalVarDef(globalvardef), readClause(clause)]).
+datadef(readclause, [], [readDefModule(defmodule), readDefUseModule(def_use_module),
+                         readDefData(defdata), readDefClause(defclause),
+                         readDefGlobalVar(defglobalvar), readClauseClause(clauseclause)]).
 
 clausedef(yolo_UNSAFE_translate_pairs, [A], [list(A), list(pair(atom, int))]).
 yolo_UNSAFE_translate_pairs(RawPairs, TranslatedPairs) :-
@@ -75,6 +73,9 @@ yolo_UNSAFE_translate_op(min, min).
 yolo_UNSAFE_translate_op(max, max).
 
 clausedef(yolo_UNSAFE_translate_exp, [A], [A, exp]).
+yolo_UNSAFE_translate_exp(Var, exp_var(Var)) :-
+        var(Var),
+        !.
 yolo_UNSAFE_translate_exp(Num, exp_num(Num)) :-
         number(Num),
         !.
@@ -85,12 +86,42 @@ yolo_UNSAFE_translate_exp(Structure, binop(Exp1, Op, Exp2)) :-
         yolo_UNSAFE_translate_exp(E1, Exp1),
         yolo_UNSAFE_translate_exp(E2, Exp2).
 
+clausedef(yolo_UNSAFE_translate_body_pair_op, [A], [A, bodyPairOp]).
+yolo_UNSAFE_translate_body_pair_op(',', and).
+yolo_UNSAFE_translate_body_pair_op(';', or).
+yolo_UNSAFE_translate_body_pair_op('->', implies).
 
 clausedef(yolo_UNSAFE_translate_body, [A], [A, body]).
-yolo_UNSAFE_translate_body(is(ExpLhs, Exp), is(NewExpLhs, NewExp)) :-
+yolo_UNSAFE_translate_body(Input, body_is(NewExpLhs, NewExp)) :-
+        Input = is(ExpLhs, Exp),
         !,
         yolo_UNSAFE_translate_exp_lhs(ExpLhs, NewExpLhs),
         yolo_UNSAFE_translate_exp(Exp, NewExp).
+yolo_UNSAFE_translate_body(Input, body_setvar(VarName, NewTerm)) :-
+        Input = setvar(VarName, Term),
+        !,
+        atom(VarName),
+        yolo_UNSAFE_translate_term(Term, NewTerm).
+yolo_UNSAFE_translate_body(Input, body_getvar(VarName, NewTerm)) :-
+        Input = getvar(VarName, Term),
+        !,
+        atom(VarName),
+        yolo_UNSAFE_translate_term(Term, NewTerm).
+yolo_UNSAFE_translate_body(Input, bodyPair(Body1, NewBodyOp, Body2)) :-
+        Input =.. [BodyOp, B1, B2],
+        yolo_UNSAFE_translate_body_pair_op(BodyOp, NewBodyOp),
+        !,
+        yolo_UNSAFE_translate_body(B1, Body1),
+        yolo_UNSAFE_translate_body(B2, Body2).
+yolo_UNSAFE_translate_body(Input, higherOrderCall(NewWhat, NewParams)) :-
+        Input =.. [call, What|Params],
+        !,
+        yolo_UNSAFE_translate_term(What, NewWhat),
+        yolo_UNSAFE_translate_terms(Params, NewParams).
+yolo_UNSAFE_translate_body(Input, firstOrderCall(Name, NewParams)) :-
+        Input =.. [Name|Params],
+        !,
+        yolo_UNSAFE_translate_terms(Params, NewParams).
 
 clausedef(yolo_UNSAFE_translate_terms, [A], [list(A), list(term)]).
 yolo_UNSAFE_translate_terms(Input, Output) :-
@@ -108,6 +139,9 @@ yolo_UNSAFE_translate_term(Input, term_lambda(NewParams, NewBody)) :-
         !,
         yolo_UNSAFE_translate_terms(Params, NewParams),
         yolo_UNSAFE_translate_body(Body, NewBody).
+yolo_UNSAFE_translate_term(Input, term_constructor(Name, NewParams)) :-
+        Input =.. [Name|Params],
+        yolo_UNSAFE_translate_terms(Params, NewParams).
 
 clausedef(yolo_UNSAFE_normalize_clause, [A, B], [A, B]).
 yolo_UNSAFE_normalize_clause(Input, Input) :-
@@ -139,22 +173,25 @@ yolo_UNSAFE_translate_type(TypeVars, Constructor, constructorType(Name, NewTypes
 
 clausedef(yolo_UNSAFE_translate_clause, [A], [A, readclause]).
 yolo_UNSAFE_translate_clause(
-        module(Name, RawExportedClauses, ExportedData),
-        readModule(module(Name, ProcessedExportedClauses, ExportedData))) :-
+        Input,
+        readDefModule(defmodule(Name, ProcessedExportedClauses, ExportedData))) :-
+        Input = module(Name, RawExportedClauses, ExportedData),
         !,
         atom(Name),
         yolo_UNSAFE_translate_pairs(RawExportedClauses, ProcessedExportedClauses),
         allAtoms(ExportedData).
 yolo_UNSAFE_translate_clause(
-        use_module(Name, RawImportedClauses, ImportedData),
-        readUseModule(use_module(Name, ProcessedImportedClauses, ImportedData))) :-
+        Input,
+        readDefUseModule(def_use_module(Name, ProcessedImportedClauses, ImportedData))) :-
+        Input = use_module(Name, RawImportedClauses, ImportedData),
         !,
         atom(Name),
         yolo_UNSAFE_translate_pairs(RawImportedClauses, ProcessedImportedClauses),
         allAtoms(ImportedData).
 yolo_UNSAFE_translate_clause(
-        datadef(Name, TypeVars, RawConstructors),
-        readDataDef(datadef(Name, TypeVars, ProcessedConstructors))) :-
+        Input,
+        readDefData(defdata(Name, TypeVars, ProcessedConstructors))) :-
+        Input = datadef(Name, TypeVars, RawConstructors),
         !,
         atom(Name),
         areTypeVars(TypeVars),
@@ -164,28 +201,127 @@ yolo_UNSAFE_translate_clause(
                  yolo_UNSAFE_translate_types(TypeVars, Types, NewTypes))),
             ProcessedConstructors).
 yolo_UNSAFE_translate_clause(
-        clausedef(Name, TypeVars, Types),
-        readClauseDef(clausedef(Name, TypeVars, NewTypes))) :-
+        Input,
+        readDefClause(defclause(Name, TypeVars, NewTypes))) :-
+        Input = clausedef(Name, TypeVars, Types),
         !,
         atom(Name),
         areTypeVars(TypeVars),
         yolo_UNSAFE_translate_types(TypeVars, Types, NewTypes).
 yolo_UNSAFE_translate_clause(
-        globalvardef(Name, TypeVars, Type),
-        readGlobalVarDef(globalvardef(Name, TypeVars, NewType))) :-
+        Input,
+        readDefGlobalVar(defglobalvar(Name, TypeVars, NewType))) :-
+        Input = globalvardef(Name, TypeVars, Type),
         !,
         atom(Name),
         areTypeVars(TypeVars),
         yolo_UNSAFE_translate_type(TypeVars, Type, NewType).
-%% yolo_UNSAFE_translate_clause(
-%%         RawClause,
-%%         readClase(clause(Name, NewParams, NewBody))) :-
-%%         yolo_UNSAFE_normalize_clause(RawClause, :-(Head, Body)),
-%%         Head =.. [Name|Params],
-        
+yolo_UNSAFE_translate_clause(
+        RawClause,
+        readClauseClause(clauseclause(Name, NewParams, NewBody))) :-
+        yolo_UNSAFE_normalize_clause(RawClause, :-(Head, Body)),
+        Head =.. [Name|Params],
+        yolo_UNSAFE_translate_terms(Params, NewParams),
+        yolo_UNSAFE_translate_body(Body, NewBody).
 
-%% clausedef(yolo_UNSAFE_load_file, [atom, loadedFile]).
-%% yolo_UNSAFE_load_file(Filename, loadedFile(Module, UseModule, DataDefs, ClauseDefs,
-%%                                            GlobalBarDefs, Clauses)) :-
-%%         TranslateType = lambda([
-        
+clausedef(sortClause, [], [readclause,
+                           list(defmodule), list(defmodule),
+                           list(def_use_module), list(def_use_module),
+                           list(defdata), list(defdata),
+                           list(defclause), list(defclause),
+                           list(defglobalvar), list(defglobalvar),
+                           list(clauseclause), list(clauseclause)]).
+sortClause(readDefModule(DefMod),
+           [DefMod|RestDefMod], RestDefMod,
+           DefUse, DefUse,
+           DefData, DefData,
+           DefClause, DefClause,
+           DefGlobalVar, DefGlobalVar,
+           ClauseClause, ClauseClause).
+sortClause(readDefUseModule(DefUseMod),
+           DefMod, DefMod,
+           [DefUseMod|RestDefUse], RestDefUse,
+           DefData, DefData,
+           DefClause, DefClause,
+           DefGlobalVar, DefGlobalVar,
+           ClauseClause, ClauseClause).
+sortClause(readDefData(DefData),
+           DefMod, DefMod,
+           DefUse, DefUse,
+           [DefData|RestDefData], RestDefData,
+           DefClause, DefClause,
+           DefGlobalVar, DefGlobalVar,
+           ClauseClause, ClauseClause).
+sortClause(readDefClause(DefClause),
+           DefMod, DefMod,
+           DefUse, DefUse,
+           DefData, DefData,
+           [DefClause|RestDefClause], RestDefClause,
+           DefGlobalVar, DefGlobalVar,
+           ClauseClause, ClauseClause).
+sortClause(readDefGlobalVar(DefGlobalVar),
+           DefMod, DefMod,
+           DefUse, DefUse,
+           DefData, DefData,
+           DefClause, DefClause,
+           [DefGlobalVar|RestDefGlobalVar], RestDefGlobalVar,
+           ClauseClause, ClauseClause).
+sortClause(readClauseClause(ClauseClause),
+           DefMod, DefMod,
+           DefUse, DefUse,
+           DefData, DefData,
+           DefClause, DefClause,
+           DefGlobalVar, DefGlobalVar,
+           [ClauseClause|RestClauseClause], RestClauseClause).
+
+clausedef(sortClauses, [], [list(readclause),
+                            list(defmodule), list(defmodule),
+                            list(def_use_module), list(def_use_module),
+                            list(defdata), list(defdata),
+                            list(defclause), list(defclause),
+                            list(defglobalvar), list(defglobalvar),
+                            list(clauseclause), list(clauseclause)]).
+sortClauses([],
+            DefMod, DefMod,
+            DefUse, DefUse,
+            DefData, DefData,
+            DefClause, DefClause,
+            DefGlobalVar, DefGlobalVar,
+            ClauseClause, ClauseClause).
+sortClauses([H|T],
+            DefMod, NewDefMod,
+            DefUse, NewDefUse,
+            DefData, NewDefData,
+            DefClause, NewDefClause,
+            DefGlobalVar, NewDefGlobalVar,
+            ClauseClause, NewClauseClause) :-
+        sortClause(H,
+                   DefMod, TempDefMod,
+                   DefUse, TempDefUse,
+                   DefData, TempDefData,
+                   DefClause, TempDefClause,
+                   DefGlobalVar, TempDefGlobalVar,
+                   ClauseClause, TempClauseClause),
+        sortClauses(T, 
+                    TempDefMod, NewDefMod,
+                    TempDefUse, NewDefUse,
+                    TempDefData, NewDefData,
+                    TempDefClause, NewDefClause,
+                    TempDefGlobalVar, NewDefGlobalVar,
+                    TempClauseClause, NewClauseClause).
+
+clausedef(loadFile, [], [atom, loadedFile]).
+loadFile(Filename, loadedFile(DefModule, DefUseModule,
+                              DefData, DefClause, DefGlobalVar,
+                              ClauseClause)) :-
+        read_clauses_from_file(
+            Filename,
+            lambda([A, B], yolo_UNSAFE_translate_clause(A, B)),
+            ReadClauses),
+        sortClauses(ReadClauses,
+                    [DefModule], [],
+                    DefUseModule, [],
+                    DefData, [],
+                    DefClause, [],
+                    DefGlobalVar, [],
+                    ClauseClause, []).
