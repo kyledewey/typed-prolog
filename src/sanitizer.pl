@@ -9,7 +9,9 @@
 
 % -Terms:              [Term]
 ensureTerms(Terms) :-
-        maplist(ensureTerm, Terms).
+        (var(Terms) ->
+            fail;
+            maplist(ensureTerm, Terms)).
 
 % -Term:               Term
 ensureTerm(Var) :-
@@ -47,6 +49,10 @@ ensureArithExp(Binop) :-
         ensureArithExp(E2).
 
 % -Body: Body
+ensureBody(Var) :-
+        var(Var),
+        !,
+        fail.
 ensureBody(AtomForm) :-
         bodyAtomForm(AtomForm),
         !.
