@@ -1,6 +1,6 @@
-module(io, [read_clauses_from_file/3], []).
+module(io, [read_clauses_from_file/3, writeClauses/2], []).
 
-use_module('common.pl', [], [option]).
+use_module('common.pl', [forall/2], [option]).
 
 datadef(stream, [A], [stream(A)]).
 datadef(mode, [], [read_mode, write_mode]).
@@ -17,6 +17,12 @@ yolo_UNSAFE_open_file(Filename, Mode, stream(Stream)) :-
 clausedef(yolo_UNSAFE_close_file, [A], [stream(A)]).
 yolo_UNSAFE_close_file(stream(Stream)) :-
         close(Stream).
+
+clausedef(withOpenStream, [A], [atom, relation([stream(A)])]).
+withOpenStream(Filename, CallThis) :-
+        yolo_UNSAFE_open_file(Filename, read_mode, Stream),
+        ((call(CallThis, Stream), yolo_UNSAFE_close_file(Stream), !);
+         yolo_UNSAFE_close_file(Stream)).
 
 clausedef(yolo_UNSAFE_read_clause, [A, B, C], [stream(A), relation([B, C]), option(C)]).
 yolo_UNSAFE_read_clause(stream(Wrapped), Translator, Translated) :-
@@ -38,6 +44,21 @@ read_clauses_from_stream(Stream, Translator, Result) :-
 
 clausedef(read_clauses_from_file, [A, B], [atom, relation([A, B]), list(B)]).
 read_clauses_from_file(Filename, Translator, Result) :-
-        yolo_UNSAFE_open_file(Filename, read_mode, Stream),
-        read_clauses_from_stream(Stream, Translator, Result),
-        yolo_UNSAFE_close_file(Stream).
+        withOpenStream(Filename,
+                       lambda([Stream],
+                              read_clauses_from_stream(Stream, Translator, Result))).
+
+clausedef(yolo_UNSAFE_write_clause, [A, B], [A, stream(B)]).
+yolo_UNSAFE_write_clause(Clause, Stream) :-
+        copy_term(Clause, Copy),
+        numbervars(Copy, 0, _, [singletons(true)]),
+        write_term(Stream, Copy, [numbervars(true), quoted(true)]),
+        format(Stream, '.~n', []).
+
+clausedef(writeClauses, [A], [list(A), atom]).
+writeClauses(Clauses, Filename) :-
+        withOpenStream(
+            Filename,
+            lambda([Stream],
+                   forall(Clauses,
+                          lambda([Clause], yolo_UNSAFE_write_clause(Clause, Stream))))).
