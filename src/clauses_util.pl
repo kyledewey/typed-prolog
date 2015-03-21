@@ -81,7 +81,7 @@ isModuleDef(FileName, module(Name, _, _)) :-
 writeClause(Clause, Stream) :-
         copy_term(Clause, Copy),
         numbervars(Copy, 0, _, [singletons(true)]),
-        write_term(Stream, Copy, [numbervars(true)]),
+        write_term(Stream, Copy, [numbervars(true), quoted(true)]),
         format(Stream, '.~n', []).
 
 % -To:   Stream
