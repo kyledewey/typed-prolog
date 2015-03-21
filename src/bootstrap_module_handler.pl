@@ -104,19 +104,23 @@ directLoadModule(FileName, AlreadyLoaded, InProgress,
 
 clausedef(renamedClause, [], [renaming, atom, int, atom]).
 renamedClause(renaming(Mapping, _, _, _), OldName, Arity, NewName) :-
-        member(pair(pair(OldName, Arity), NewName), Mapping).
+        member(pair(pair(OldName, Arity), NewName), Mapping), !.
+renamedClause(_, Name, _, Name). % TODO: this is a hack to allow us to escape to stock Prolog.
 
 clausedef(renamedType, [], [renaming, atom, atom]).
 renamedType(renaming(_, Mapping, _, _), OldName, NewName) :-
-        member(pair(OldName, NewName), Mapping).
+        member(pair(OldName, NewName), Mapping), !.
+renamedType(_, Name, Name).
 
 clausedef(renamedConstructor, [], [renaming, atom, atom]).
 renamedConstructor(renaming(_, _, Mapping, _), OldName, NewName) :-
-        member(pair(OldName, NewName), Mapping).
+        member(pair(OldName, NewName), Mapping), !.
+renamedConstructor(_, Name, Name).
 
 clausedef(renamedGlobalVariable, [], [renaming, atom, atom]).
 renamedGlobalVariable(renaming(_, _, _, Mapping), OldName, NewName) :-
-        member(pair(OldName, NewName), Mapping).
+        member(pair(OldName, NewName), Mapping), !.
+renamedGlobalVariable(_, Name, Name).
 
 datadef(renaming, [], [renaming(list(pair(pair(atom, int), atom)), % for clauses
                                 list(pair(atom, atom)), % for types
@@ -224,13 +228,13 @@ clausedef(loadModule, [], [atom, % possibly relative filename
                            list(atom), % modules whose loading is in progress
                            list(loadedModule)]). % newly loaded modules
 loadModule(RelativeFileName, RelativeTo, AlreadyLoaded, InProgress, NewLoaded) :-
-        yolo_UNSAFE_absolute_file_name(RelativeFileName, RelativeTo, AbsoluteFilename),
+        yolo_UNSAFE_absolute_file_name(RelativeFileName, RelativeTo, AbsoluteFileName),
         
         % don't allow cyclic loading, which would put us in an infinite loop
-        notMember(AbsoluteFilename, InProgress),
+        notMember(AbsoluteFileName, InProgress),
 
         % if we've already loaded this module, we're done
-        (member(loadedModule(AbsoluteFilename, _, _), AlreadyLoaded) ->
+        (member(loadedModule(AbsoluteFileName, _, _), AlreadyLoaded) ->
             (NewLoaded = AlreadyLoaded);
             (directLoadModule(AbsoluteFileName, AlreadyLoaded,
                               [AbsoluteFileName|InProgress],
@@ -392,6 +396,7 @@ clausedef(handleModules, [], [atom, % Entry point possibly relative filename
                               list(defdata), list(defclause),
                               list(defglobalvar), list(clauseclause)]).
 handleModules(Filename, DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
+        setvar(counter, 0),
         loadModule(Filename, './', [], [], LoadedModules),
         yolo_UNSAFE_absolute_file_name(Filename, './', AbsoluteFilename),
         translateModule(LoadedModules, AbsoluteFilename, 
