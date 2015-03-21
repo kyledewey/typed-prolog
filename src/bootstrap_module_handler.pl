@@ -2,7 +2,7 @@ module(bootstrap_module_handler, [handleModules/5], []).
 
 use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2,
                          foldRight/4, appendDiffList/3],
-                        [pair, tup3, tup4]).
+                        [pair, tup3, tup5]).
 use_module('bootstrap_syntax.pl', [loadFile/2],
                                   [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                                    typeConstructor, defdata, clauseclause, defglobalvar,
@@ -283,11 +283,17 @@ translateTypes(Renaming, Types, NewTypes) :-
         map(Types, lambda([Type, NewType], translateType(Renaming, Type, NewType)), NewTypes).
 
 clausedef(translateType, [], [renaming, type, type]).
-translateType(_, intType, intType).
-translateType(_, atomType, atomType).
+translateType(_, Variable, NewVariable) :-
+        var(Variable),
+        !,
+        Variable = NewVariable.
+translateType(_, intType, intType) :- !.
+translateType(_, atomType, atomType) :- !.
 translateType(Renaming, relationType(Types), relationType(NewTypes)) :-
+        !,
         translateTypes(Renaming, Types, NewTypes).
 translateType(Renaming, constructorType(Name, Types), constructorType(NewName, NewTypes)) :-
+        !,
         renamedType(Renaming, Name, NewName),
         translateTypes(Renaming, Types, NewTypes).
 
@@ -358,6 +364,7 @@ translateLoadedFile(Renaming,
 % will recursively translate
 clausedef(translateModule, [], [list(loadedModule), % all loaded modules
                                 atom, % absolute filename of module to translate
+                                list(atom), % absolute filename of already translated modules
                                 list(defdata), % diff list
                                 list(defdata),
                                 list(defclause), % diff list
@@ -366,7 +373,14 @@ clausedef(translateModule, [], [list(loadedModule), % all loaded modules
                                 list(defglobalvar),
                                 list(clauseclause), % diff list
                                 list(clauseclause)]).
-translateModule(AllModules, AbsoluteFilename,
+translateModule(_, Filename, AlreadyTranslated,
+                DataDefs, DataDefs,
+                ClauseDefs, ClauseDefs,
+                GlobalVarDefs, GlobalVarDefs,
+                Clauses, Clauses) :-
+        % if we've already loaded it, we're done
+        member(Filename, AlreadyTranslated), !.
+translateModule(AllModules, AbsoluteFilename, AlreadyTranslated,
                 DataDefInput, DataDefOutput,
                 ClauseDefInput, ClauseDefOutput,
                 GlobalVarInput, GlobalVarOutput,
@@ -379,18 +393,20 @@ translateModule(AllModules, AbsoluteFilename,
                             ClauseDefInput, ClauseDefTemp,
                             GlobalVarInput, GlobalVarTemp,
                             ClauseInput, ClauseTemp),
-        foldLeft(UsesModules, tup4(DataDefTemp, ClauseDefTemp, GlobalVarTemp, ClauseTemp),
-                 lambda([tup4(CurDataDef, CurClauseDef, CurGlobalVarDef, CurClause),
+        foldLeft(UsesModules,
+                 tup5([AbsoluteFilename|AlreadyTranslated],
+                      DataDefTemp, ClauseDefTemp, GlobalVarTemp, ClauseTemp),
+                 lambda([tup5(AT, CurDataDef, CurClauseDef, CurGlobalVarDef, CurClause),
                          def_use_module(RelativeFilename, _, _),
-                         tup4(NewDataDef, NewClauseDef, NewGlobalVarDef, NewClause)],
+                         tup5([CurFilename|AT], NewDataDef, NewClauseDef, NewGlobalVarDef, NewClause)],
                         (yolo_UNSAFE_absolute_file_name(RelativeFilename, AbsoluteFilename,
                                                         CurFilename),
-                         translateModule(AllModules, CurFilename,
+                         translateModule(AllModules, CurFilename, AT,
                                          CurDataDef, NewDataDef,
                                          CurClauseDef, NewClauseDef,
                                          CurGlobalVarDef, NewGlobalVarDef,
                                          CurClause, NewClause))),
-                 tup4(DataDefOutput, ClauseDefOutput, GlobalVarOutput, ClauseOutput)).
+                 tup5(_, DataDefOutput, ClauseDefOutput, GlobalVarOutput, ClauseOutput)).
 
 clausedef(handleModules, [], [atom, % Entry point possibly relative filename
                               list(defdata), list(defclause),
@@ -399,7 +415,7 @@ handleModules(Filename, DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
         setvar(counter, 0),
         loadModule(Filename, './', [], [], LoadedModules),
         yolo_UNSAFE_absolute_file_name(Filename, './', AbsoluteFilename),
-        translateModule(LoadedModules, AbsoluteFilename, 
+        translateModule(LoadedModules, AbsoluteFilename, [],
                         DataDefs, [],
                         ClauseDefs, [],
                         GlobalVarDefs, [],
