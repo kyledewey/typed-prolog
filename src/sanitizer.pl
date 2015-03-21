@@ -276,14 +276,14 @@ sanitizeFile(
                    module(_, ExportedClauses, ExportedData),
                    ModuleUses, Clauses)) :-
         % basic syntactic well-formedness
-        ensureDataDefs(DataDefs),
-        ensureClauseDefs(ClauseDefs),
-        ensureGlobalVarDefs(GlobalVarDefs),
-        ensureClauses(Clauses),
+        ensureDataDefs(DataDefs), !,
+        ensureClauseDefs(ClauseDefs), !,
+        ensureGlobalVarDefs(GlobalVarDefs), !,
+        ensureClauses(Clauses), !,
 
         % definitions have matching uses and vice-versa
-        clauseDefsInhabited(Clauses, ClauseDefs),
-        clausesHaveClauseDef(Clauses, ClauseDefs),
+        clauseDefsInhabited(Clauses, ClauseDefs), !,
+        clausesHaveClauseDef(Clauses, ClauseDefs), !,
 
         % no duplicate exports exist
         is_set(ExportedClauses),
