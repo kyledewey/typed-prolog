@@ -199,8 +199,8 @@ yolo_UNSAFE_translate_clause(
         atom(Name),
         areTypeVars(TypeVars),
         map(RawConstructors,
-            lambda([Input, typeConstructor(ConstructorName, NewTypes)],
-                (Input =.. [ConstructorName|Types],
+            lambda([Cons, typeConstructor(ConstructorName, NewTypes)],
+                (Cons =.. [ConstructorName|Types],
                  yolo_UNSAFE_translate_types(TypeVars, Types, NewTypes))),
             ProcessedConstructors).
 yolo_UNSAFE_translate_clause(
