@@ -1,7 +1,8 @@
 module(common, [map/3, filter/3, foldLeft/4, forall/2,
                 setContains/2, flatMap/3, foldRight/4,
                 zip/3, find/3, beginsWith/2, contains/2,
-                atomContains/2, notMember/2, appendDiffList/3],
+                atomContains/2, notMember/2, appendDiffList/3,
+                makeSetFromList/2, setUnion/3, setDifference/3],
                 [pair, tup3, tup4, tup5, tup6, tup7, tup8, option]).
 
 datadef(pair, [A, B], [pair(A, B)]).
@@ -102,3 +103,27 @@ clausedef(appendDiffList, [A], [list(A), list(A), list(A)]).
 appendDiffList([], List, List).
 appendDiffList([H|T], [H|Rest], Output) :-
         appendDiffList(T, Rest, Output).
+
+clausedef(makeSetFromList, [A], [list(A), list(A)]).
+makeSetFromList(List, Set) :-
+        foldLeft(List, [],
+                 lambda([Accum, CurElement, NewAccum],
+                        (setContains(Accum, CurElement) ->
+                            (Accum = NewAccum);
+                            (NewAccum = [CurElement|Accum]))),
+                 Set).
+
+% uses == for comparison
+clausedef(setUnion, [A], [list(A), list(A), list(A)]).
+setUnion(Set1, Set2, FinalSet) :-
+        append(Set1, Set2, List),
+        makeSetFromList(List, FinalSet).
+
+clausedef(setDifference, [A], [list(A), list(A), list(A)]).
+setDifference(SetSource, SetMinus, FinalSet) :-
+        foldLeft(SetSource, [],
+                 lambda([Accum, Cur, NewAccum],
+                        (setContains(SetMinus, Cur) ->
+                            (Accum = NewAccum);
+                            (NewAccum = [Cur|Accum]))),
+                 FinalSet).
