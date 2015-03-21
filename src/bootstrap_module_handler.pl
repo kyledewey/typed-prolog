@@ -192,11 +192,11 @@ makeRenaming(LoadedModules, Filename,
         foldRight(DataDefs, pair([], []),
                   lambda([defdata(TypeName, _, TypeConstructors),
                           pair(CurTypes, CurCons),
-                          pair([pair(TypeName, NewTypeName)|NewTypes], NewCons)],
+                          pair([pair(TypeName, NewTypeName)|CurTypes], NewCons)],
                          (% determine the appropriate access modifier
                           (member(TypeName, ExportedTypes) ->
-                              (AccessModifier = mod_public;
-                               AccessModifier = mod_private)),
+                              (AccessModifier = mod_public);
+                              (AccessModifier = mod_private)),
 
                            % determine the new type name
                            yolo_UNSAFE_mangled_name(AccessModifier, LocalModuleId,
@@ -385,6 +385,7 @@ translateModule(AllModules, AbsoluteFilename, AlreadyTranslated,
                 ClauseDefInput, ClauseDefOutput,
                 GlobalVarInput, GlobalVarOutput,
                 ClauseInput, ClauseOutput) :-
+        !,
         member(loadedModule(AbsoluteFilename, _, LoadedFile), AllModules),
         LoadedFile = loadedFile(_, UsesModules, _, _, _, _),
         makeRenaming(AllModules, AbsoluteFilename, Renaming),
@@ -393,6 +394,7 @@ translateModule(AllModules, AbsoluteFilename, AlreadyTranslated,
                             ClauseDefInput, ClauseDefTemp,
                             GlobalVarInput, GlobalVarTemp,
                             ClauseInput, ClauseTemp),
+        !,
         foldLeft(UsesModules,
                  tup5([AbsoluteFilename|AlreadyTranslated],
                       DataDefTemp, ClauseDefTemp, GlobalVarTemp, ClauseTemp),
@@ -413,7 +415,7 @@ clausedef(handleModules, [], [atom, % Entry point possibly relative filename
                               list(defglobalvar), list(clauseclause)]).
 handleModules(Filename, DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
         setvar(counter, 0),
-        loadModule(Filename, './', [], [], LoadedModules),
+        loadModule(Filename, './', [], [], LoadedModules), !,
         yolo_UNSAFE_absolute_file_name(Filename, './', AbsoluteFilename),
         translateModule(LoadedModules, AbsoluteFilename, [],
                         DataDefs, [],
