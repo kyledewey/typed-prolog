@@ -2,9 +2,11 @@ module(common, [map/3, filter/3, foldLeft/4, forall/2,
                 setContains/2, flatMap/3, foldRight/4,
                 zip/3, find/3, beginsWith/2, contains/2,
                 atomContains/2, notMember/2],
-                [pair, option]).
+                [pair, tup3, option]).
 
 datadef(pair, [A, B], [pair(A, B)]).
+datadef(tup3, [A, B, C], [tup3(A, B, C)]).
+
 datadef(option, [A], [some(A), none]).
 
 clausedef(map, [A, B], [list(A), relation([A, B]), list(B)]).
