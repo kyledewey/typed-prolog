@@ -1,8 +1,8 @@
-module(bootstrap_module_handler, [], []).
+module(bootstrap_module_handler, [handleModules/5], []).
 
 use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2,
-                         foldRight/4],
-                        [pair, tup3]).
+                         foldRight/4, appendDiffList/3],
+                        [pair, tup3, tup4]).
 use_module('bootstrap_syntax.pl', [loadFile/2],
                                   [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                                    typeConstructor, defdata, clauseclause, defglobalvar,
@@ -101,6 +101,22 @@ directLoadModule(FileName, AlreadyLoaded, InProgress,
         is_set(AllConstructors),
 
         freshModuleId(ModuleId).
+
+clausedef(renamedClause, [], [renaming, atom, int, atom]).
+renamedClause(renaming(Mapping, _, _, _), OldName, Arity, NewName) :-
+        member(pair(pair(OldName, Arity), NewName), Mapping).
+
+clausedef(renamedType, [], [renaming, atom, atom]).
+renamedType(renaming(_, Mapping, _, _), OldName, NewName) :-
+        member(pair(OldName, NewName), Mapping).
+
+clausedef(renamedConstructor, [], [renaming, atom, atom]).
+renamedConstructor(renaming(_, _, Mapping, _), OldName, NewName) :-
+        member(pair(OldName, NewName), Mapping).
+
+clausedef(renamedGlobalVariable, [], [renaming, atom, atom]).
+renamedGlobalVariable(renaming(_, _, _, Mapping), OldName, NewName) :-
+        member(pair(OldName, NewName), Mapping).
 
 datadef(renaming, [], [renaming(list(pair(pair(atom, int), atom)), % for clauses
                                 list(pair(atom, atom)), % for types
@@ -220,7 +236,166 @@ loadModule(RelativeFileName, RelativeTo, AlreadyLoaded, InProgress, NewLoaded) :
                               [AbsoluteFileName|InProgress],
                               NewLoaded))).
 
-%% clausedef(handleModules, [], [atom, % Entry point filename
-%%                               list(defdata), list(defclause),
-%%                               list(defglobalvar), list(clauseclause)]).
-%% handleModules(Filename, DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
+clausedef(translateVarUse, [], [renaming, atom, term, atom, term]).
+translateVarUse(Renaming, VarUsed, Term, NewVarUsed, NewTerm) :-
+        renamedGlobalVariable(Renaming, VarUsed, NewVarUsed),
+        translateTerm(Renaming, Term, NewTerm).
+
+clausedef(translateBody, [], [renaming, body, body]).
+translateBody(_, body_is(Lhs, Exp), body_is(Lhs, Exp)).
+translateBody(Renaming, body_setvar(VarName, Term), body_setvar(NewVarName, NewTerm)) :-
+        translateVarUse(Renaming, VarName, Term, NewVarName, NewTerm).
+translateBody(Renaming, body_getvar(VarName, Term), body_getvar(NewVarName, NewTerm)) :-
+        translateVarUse(Renaming, VarName, Term, NewVarName, NewTerm).
+translateBody(Renaming, bodyPair(B1, Op, B2), bodyPair(NewB1, Op, NewB2)) :-
+        translateBody(Renaming, B1, NewB1),
+        translateBody(Renaming, B2, NewB2).
+translateBody(Renaming, higherOrderCall(What, Params), higherOrderCall(NewWhat, NewParams)) :-
+        translateTerm(Renaming, What, NewWhat),
+        translateTerms(Renaming, Params, NewParams).
+translateBody(Renaming, firstOrderCall(Name, Params), firstOrderCall(NewName, NewParams)) :-
+        length(Params, Arity),
+        renamedClause(Renaming, Name, Arity, NewName),
+        translateTerms(Renaming, Params, NewParams).
+
+clausedef(translateTerms, [], [renaming, list(term), list(term)]).
+translateTerms(Renaming, Terms, NewTerms) :-
+        map(Terms, lambda([Term, NewTerm], translateTerm(Renaming, Term, NewTerm)), NewTerms).
+
+clausedef(translateTerm, [], [renaming, term, term]).
+translateTerm(_, term_var(Variable), term_var(Variable)).
+translateTerm(_, term_num(N), term_num(N)).
+translateTerm(Renaming, term_lambda(Params, Body), term_lambda(NewParams, NewBody)) :-
+        translateTerms(Renaming, Params, NewParams),
+        translateBody(Renaming, Body, NewBody).
+translateTerm(Renaming,
+              term_constructor(ConsName, Params),
+              term_constructor(NewConsName, NewParams)) :-
+        renamedConstructor(Renaming, ConsName, NewConsName),
+        translateTerms(Renaming, Params, NewParams).
+
+clausedef(translateTypes, [], [renaming, list(type), list(type)]).
+translateTypes(Renaming, Types, NewTypes) :-
+        map(Types, lambda([Type, NewType], translateType(Renaming, Type, NewType)), NewTypes).
+
+clausedef(translateType, [], [renaming, type, type]).
+translateType(_, intType, intType).
+translateType(_, atomType, atomType).
+translateType(Renaming, relationType(Types), relationType(NewTypes)) :-
+        translateTypes(Renaming, Types, NewTypes).
+translateType(Renaming, constructorType(Name, Types), constructorType(NewName, NewTypes)) :-
+        renamedType(Renaming, Name, NewName),
+        translateTypes(Renaming, Types, NewTypes).
+
+clausedef(translateDataDef, [], [renaming, defdata, defdata]).
+translateDataDef(Renaming,
+                 defdata(Name, TypeParams, Constructors),
+                 defdata(NewName, TypeParams, NewConstructors)) :-
+        renamedType(Renaming, Name, NewName),
+        map(Constructors,
+            lambda([typeConstructor(ConstructorName, Types),
+                    typeConstructor(NewConstructorName, NewTypes)],
+                   (renamedConstructor(Renaming, ConstructorName, NewConstructorName),
+                    translateTypes(Renaming, Types, NewTypes))),
+            NewConstructors).
+
+clausedef(translateLoadedFile, [], [renaming,
+                                    loadedFile,
+                                    list(defdata), % diff list
+                                    list(defdata),
+                                    list(defclause), % diff list
+                                    list(defclause),
+                                    list(defglobalvar), % diff list
+                                    list(defglobalvar),
+                                    list(clauseclause), % diff list
+                                    list(clauseclause)]).
+translateLoadedFile(Renaming,
+                    loadedFile(_, _, DataDefs, ClauseDefs, GlobalVarDefs, Clauses),
+                    DataDefInput, DataDefOutput,
+                    ClauseDefInput, ClauseDefOutput,
+                    GlobalVarInput, GlobalVarOutput,
+                    ClauseInput, ClauseOutput) :-
+        % handle the data defs
+        map(DataDefs,
+            lambda([DataDef, NewDataDef], translateDataDef(Renaming, DataDef, NewDataDef)),
+            NewDataDefs),
+        appendDiffList(NewDataDefs, DataDefInput, DataDefOutput),
+
+        % handle the clause defs
+        map(ClauseDefs,
+            lambda([defclause(Name, TypeParams, Types),
+                    defclause(NewName, TypeParams, NewTypes)],
+                   (length(Types, Arity),
+                    renamedClause(Renaming, Name, Arity, NewName),
+                    translateTypes(Renaming, Types, NewTypes))),
+            NewClauseDefs),
+        appendDiffList(NewClauseDefs, ClauseDefInput, ClauseDefOutput),
+
+        % handle the global var defs
+        map(GlobalVarDefs,
+            lambda([defglobalvar(Name, TypeParams, Type),
+                    defglobalvar(NewName, TypeParams, NewType)],
+                   (renamedGlobalVariable(Renaming, Name, NewName),
+                    translateType(Renaming, Type, NewType))),
+            NewGlobalVarDefs),
+        appendDiffList(NewGlobalVarDefs, GlobalVarInput, GlobalVarOutput),
+
+        % handle the clauses
+        map(Clauses,
+            lambda([clauseclause(Name, Params, Body),
+                    clauseclause(NewName, NewParams, NewBody)],
+                   (length(Params, Arity),
+                    renamedClause(Renaming, Name, Arity, NewName),
+                    translateTerms(Renaming, Params, NewParams),
+                    translateBody(Renaming, Body, NewBody))),
+            NewClauses),
+        appendDiffList(NewClauses, ClauseInput, ClauseOutput).
+
+% will recursively translate
+clausedef(translateModule, [], [list(loadedModule), % all loaded modules
+                                atom, % absolute filename of module to translate
+                                list(defdata), % diff list
+                                list(defdata),
+                                list(defclause), % diff list
+                                list(defclause),
+                                list(defglobalvar), % diff list
+                                list(defglobalvar),
+                                list(clauseclause), % diff list
+                                list(clauseclause)]).
+translateModule(AllModules, AbsoluteFilename,
+                DataDefInput, DataDefOutput,
+                ClauseDefInput, ClauseDefOutput,
+                GlobalVarInput, GlobalVarOutput,
+                ClauseInput, ClauseOutput) :-
+        member(loadedModule(AbsoluteFilename, _, LoadedFile), AllModules),
+        LoadedFile = loadedFile(_, UsesModules, _, _, _, _),
+        makeRenaming(AllModules, AbsoluteFilename, Renaming),
+        translateLoadedFile(Renaming, LoadedFile,
+                            DataDefInput, DataDefTemp,
+                            ClauseDefInput, ClauseDefTemp,
+                            GlobalVarInput, GlobalVarTemp,
+                            ClauseInput, ClauseTemp),
+        foldLeft(UsesModules, tup4(DataDefTemp, ClauseDefTemp, GlobalVarTemp, ClauseTemp),
+                 lambda([tup4(CurDataDef, CurClauseDef, CurGlobalVarDef, CurClause),
+                         def_use_module(RelativeFilename, _, _),
+                         tup4(NewDataDef, NewClauseDef, NewGlobalVarDef, NewClause)],
+                        (yolo_UNSAFE_absolute_file_name(RelativeFilename, AbsoluteFilename,
+                                                        CurFilename),
+                         translateModule(AllModules, CurFilename,
+                                         CurDataDef, NewDataDef,
+                                         CurClauseDef, NewClauseDef,
+                                         CurGlobalVarDef, NewGlobalVarDef,
+                                         CurClause, NewClause))),
+                 tup4(DataDefOutput, ClauseDefOutput, GlobalVarOutput, ClauseOutput)).
+
+clausedef(handleModules, [], [atom, % Entry point possibly relative filename
+                              list(defdata), list(defclause),
+                              list(defglobalvar), list(clauseclause)]).
+handleModules(Filename, DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
+        loadModule(Filename, './', [], [], LoadedModules),
+        yolo_UNSAFE_absolute_file_name(Filename, './', AbsoluteFilename),
+        translateModule(LoadedModules, AbsoluteFilename, 
+                        DataDefs, [],
+                        ClauseDefs, [],
+                        GlobalVarDefs, [],
+                        Clauses, []).
