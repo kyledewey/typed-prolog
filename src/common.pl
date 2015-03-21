@@ -1,11 +1,16 @@
 module(common, [map/3, filter/3, foldLeft/4, forall/2,
                 setContains/2, flatMap/3, foldRight/4,
                 zip/3, find/3, beginsWith/2, contains/2,
-                atomContains/2, notMember/2],
-                [pair, tup3, option]).
+                atomContains/2, notMember/2, appendDiffList/3],
+                [pair, tup3, tup4, tup5, tup6, tup7, tup8, option]).
 
 datadef(pair, [A, B], [pair(A, B)]).
 datadef(tup3, [A, B, C], [tup3(A, B, C)]).
+datadef(tup4, [A, B, C, D], [tup4(A, B, C, D)]).
+datadef(tup5, [A, B, C, D, E], [tup5(A, B, C, D, E)]).
+datadef(tup6, [A, B, C, D, E, F], [tup6(A, B, C, D, E, F)]).
+datadef(tup7, [A, B, C, D, E, F, G], [tup7(A, B, C, D, E, F, G)]).
+datadef(tup8, [A, B, C, D, E, F, G, H], [tup8(A, B, C, D, E, F, G, H)]).
 
 datadef(option, [A], [some(A), none]).
 
@@ -92,3 +97,8 @@ atomContains(Original, Probe) :-
         atom_codes(Original, OriginalList),
         atom_codes(Probe, ProbeList),
         contains(OriginalList, ProbeList).
+
+clausedef(appendDiffList, [A], [list(A), list(A), list(A)]).
+appendDiffList([], List, List).
+appendDiffList([H|T], [H|Rest], Output) :-
+        appendDiffList(T, Rest, Output).
