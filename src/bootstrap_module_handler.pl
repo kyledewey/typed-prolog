@@ -1,10 +1,21 @@
 module(bootstrap_module_handler, [], []).
 
-use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2], [pair]).
+use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2,
+                         foldRight/4],
+                        [pair, tup3]).
 use_module('bootstrap_syntax.pl', [loadFile/2],
                                   [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                                    typeConstructor, defdata, clauseclause, defglobalvar,
                                    defmodule, def_use_module, loadedFile]).
+
+datadef(accessModifier, [], [mod_public, mod_private]).
+
+clausedef(yolo_UNSAFE_mangled_name, [], [accessModifier, int, atom, atom]).
+yolo_UNSAFE_mangled_name(AccessModifier, ModuleId, OriginalName, NewName) :-
+        (AccessModifier == mod_public ->
+            (WriteAccess = public);
+            (WriteAccess = private)),
+        format(atom(NewName), '~a_~d_~a', [WriteAccess, ModuleId, OriginalName]).
 
 globalvardef(counter, [], int).
 clausedef(freshModuleId, [], [int]).
@@ -93,7 +104,103 @@ directLoadModule(FileName, AlreadyLoaded, InProgress,
 
 datadef(renaming, [], [renaming(list(pair(pair(atom, int), atom)), % for clauses
                                 list(pair(atom, atom)), % for types
-                                list(pair(atom, atom)))]). % for constructors
+                                list(pair(atom, atom)), % for constructors
+                                list(pair(atom, atom)))]). % for global variables
+% assumes that there are no duplicates
+clausedef(makeRenaming, [], [list(loadedModule), % all loaded modules
+                             atom, % absolute filename of module of interest
+                             renaming]).
+makeRenaming(LoadedModules, Filename,
+             renaming(ClauseRenaming, TypeRenaming, ConstructorRenaming, GlobalVarRenaming)) :-
+        % get the corresponding module
+        member(loadedModule(Filename, LocalModuleId, LoadedFile), LoadedModules),
+        LoadedFile = loadedFile(defmodule(_, ExportedClauses, ExportedTypes),
+                                UsesModules,
+                                DataDefs,
+                                ClauseDefs,
+                                GlobalVarDefs,
+                                _),
+        
+        % determine renamings for external clauses, types, and constructors
+        foldRight(UsesModules, tup3([], [], []),
+                  lambda([def_use_module(UsedFilename, ImportedClauses, ImportedTypes),
+                          tup3(CurClauses, CurTypes, CurCons),
+                          tup3(NewClauses, NewTypes, NewCons)],
+                         (% determine the ID of the module
+                          yolo_UNSAFE_absolute_file_name(UsedFilename, Filename, ExternalFilename),
+                          member(loadedModule(ExternalFilename, ModuleId, _), LoadedModules),
+
+                          % determine renamings for the imported clauses
+                          map(ImportedClauses,
+                              lambda([NameArity, pair(NameArity, NewClauseName)],
+                                     (NameArity = pair(ClauseName, _),
+                                      yolo_UNSAFE_mangled_name(mod_public, ModuleId,
+                                                               ClauseName, NewClauseName))),
+                              AddClauses),
+                          append(AddClauses, CurClauses, NewClauses),
+
+                          % determine renamings for the imported types
+                          map(ImportedTypes,
+                              lambda([TypeName, pair(TypeName, NewTypeName)],
+                                     yolo_UNSAFE_mangled_name(mod_public, ModuleId,
+                                                              TypeName, NewTypeName)),
+                              AddTypes),
+                          append(AddTypes, CurTypes, NewTypes),
+
+                          % determine renamings for the imported constructors
+                          importedConstructors(LoadedModules, ExternalFilename, ImportedTypes,
+                                               ImportedConstructors),
+                          map(ImportedConstructors,
+                              lambda([ConsName, pair(ConsName, NewConsName)],
+                                     yolo_UNSAFE_mangled_name(mod_public, ModuleId,
+                                                              ConsName, NewConsName)),
+                              AddCons),
+                          append(AddCons, CurCons, NewCons))),
+                  tup3(ExternalClauseRenaming, ExternalTypeRenaming, ExternalConstructorRenaming)),
+
+        % determine renaming for local clause defs
+        map(ClauseDefs,
+            lambda([defclause(Name, _, Params), pair(pair(Name, Arity), NewName)],
+                   (length(Params, Arity),
+                    (member(pair(Name, Arity), ExportedClauses) ->
+                        (AccessModifier = mod_public);
+                        (AccessModifier = mod_private)),
+                    yolo_UNSAFE_mangled_name(AccessModifier, LocalModuleId, Name, NewName))),
+            LocalClauseRenaming),
+
+        % determine renaming for local types and local constructors
+        foldRight(DataDefs, pair([], []),
+                  lambda([defdata(TypeName, _, TypeConstructors),
+                          pair(CurTypes, CurCons),
+                          pair([pair(TypeName, NewTypeName)|NewTypes], NewCons)],
+                         (% determine the appropriate access modifier
+                          (member(TypeName, ExportedTypes) ->
+                              (AccessModifier = mod_public;
+                               AccessModifier = mod_private)),
+
+                           % determine the new type name
+                           yolo_UNSAFE_mangled_name(AccessModifier, LocalModuleId,
+                                                    TypeName, NewTypeName),
+                           
+                           % determine the new constructor names
+                           map(TypeConstructors,
+                               lambda([typeConstructor(ConsName, _), pair(ConsName, NewConsName)],
+                                      yolo_UNSAFE_mangled_name(AccessModifier, LocalModuleId,
+                                                               ConsName, NewConsName)),
+                               AddCons),
+                           append(AddCons, CurCons, NewCons))),
+                  pair(LocalTypeRenaming, LocalConstructorRenaming)),
+
+        % determine renaming for global variables
+        map(GlobalVarDefs,
+            lambda([defglobalvar(Name, _, _), pair(Name, NewName)],
+                   yolo_UNSAFE_mangled_name(mod_private, LocalModuleId, Name, NewName)),
+            GlobalVarRenaming),
+
+        % put it all together
+        append(LocalClauseRenaming, ExternalClauseRenaming, ClauseRenaming),
+        append(LocalTypeRenaming, ExternalTypeRenaming, TypeRenaming),
+        append(LocalConstructorRenaming, ExternalConstructorRenaming, ConstructorRenaming).
 
 clausedef(loadModule, [], [atom, % possibly relative filename
                            atom, % relative to another file
