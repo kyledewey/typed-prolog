@@ -1,7 +1,7 @@
 module(bootstrap_translator, [translateClauses/3], [engine_type]).
 
 use_module('common.pl', [setUnion/3, setDifference/3, filter/3, setContains/2,
-                         makeSetFromList/2, map/3, foldLeft/4], []).
+                         makeSetFromList/2, map/3, foldLeft/4, sortItems/4], []).
 use_module('bootstrap_syntax.pl', [],
                                   [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                                    typeConstructor, defdata, clauseclause, defglobalvar,
@@ -204,8 +204,12 @@ clausedef(translateClauses, [], [list(clauseclause),
 translateClauses(Clauses, Engine, NewClauses) :-
         setvar(counter, 0),
         setvar(engine, Engine),
-        foldLeft(Clauses, NewClauses,
+        foldLeft(Clauses, UnsortedClauses,
                  lambda([Accum, Clause, NewAccum],
                         (translateClause(Clause, NewClause, Accum, TempAccum),
                          TempAccum = [NewClause|NewAccum])),
-                 []).
+                 []),
+        sortItems(UnsortedClauses,
+                  lambda([clauseclause(Name, _, _), Name], true),
+                  lambda([Name1, Name2], Name1 @> Name2),
+                  NewClauses).

@@ -2,7 +2,8 @@ module(common, [map/3, filter/3, foldLeft/4, forall/2,
                 setContains/2, flatMap/3, foldRight/4,
                 zip/3, find/3, beginsWith/2, contains/2,
                 atomContains/2, notMember/2, appendDiffList/3,
-                makeSetFromList/2, setUnion/3, setDifference/3],
+                makeSetFromList/2, setUnion/3, setDifference/3,
+                sortItems/4],
                 [pair, tup3, tup4, tup5, tup6, tup7, tup8, option]).
 
 datadef(pair, [A, B], [pair(A, B)]).
@@ -127,3 +128,29 @@ setDifference(SetSource, SetMinus, FinalSet) :-
                             (Accum = NewAccum);
                             (NewAccum = [Cur|Accum]))),
                  FinalSet).
+
+% inserts an item into a sorted list
+clausedef(insertItem, [A], [list(A), relation([A, A]), A, list(A)]).
+insertItem([], _, A, [A]) :- !.
+insertItem([H|T], Comparer, A, [H|Rest]) :-
+        call(Comparer, A, H),
+        insertItem(T, Comparer, A, Rest),
+        !.
+insertItem([H|T], _, A, [A, H|T]).
+
+clausedef(sortItems, [A, B], [list(A), % items to sort
+                              relation([A, B]), % map them to this domain first
+                              relation([B, B]), % compare in the other domain
+                              list(A)]). % sorted according to B
+sortItems(Items, Mapper, Comparer, SortedItems) :-
+        map(Items,
+            lambda([A, pair(A, B)], call(Mapper, A, B)),
+            ItemPairs),
+        PairComparer = lambda([pair(_, B1), pair(_, B2)], call(Comparer, B1, B2)),
+        foldLeft(ItemPairs, [],
+                 lambda([Accum, Pair, NewAccum],
+                        insertItem(Accum, PairComparer, Pair, NewAccum)),
+                 SortedPairs),
+        map(SortedPairs,
+            lambda([pair(A, _), A], true),
+            SortedItems).
