@@ -1,4 +1,4 @@
-module(bootstrap_typechecker, [], []).
+module(bootstrap_typechecker, [typecheckClauses/4], []).
 
 use_module('bootstrap_syntax.pl', [],
                                   [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
@@ -109,18 +109,21 @@ envVariableType(TypeEnv, Variable, Type, NewTypeEnv) :-
 clausedef(typecheckLhs, [], [list(pair(int, type)), % input type environment,
                              expLhs,
                              list(pair(int, type))]). % output type environment
-typecheckLhs(TypeEnv, lhs_num(_), TypeEnv).
+typecheckLhs(TypeEnv, lhs_num(_), TypeEnv) :- !.
 typecheckLhs(TypeEnv, lhs_var(Variable), NewTypeEnv) :-
+        !,
         envVariableType(TypeEnv, Variable, intType, NewTypeEnv).
 
 clausedef(typecheckExp, [], [list(pair(int, type)), % input type environment,
                              exp,
                              list(pair(int, type))]). % output type environment
 typecheckExp(TypeEnv, exp_var(Variable), NewTypeEnv) :-
+        !,
         envVariableType(TypeEnv, Variable, intType, NewTypeEnv).
-typecheckExp(TypeEnv, exp_num(_), TypeEnv).
+typecheckExp(TypeEnv, exp_num(_), TypeEnv) :- !.
 typecheckExp(TypeEnv, binop(E1, _, E2), NewTypeEnv) :-
-        typecheckExp(TypeEnv, E1, TempTypeEnv),
+        !,
+        typecheckExp(TypeEnv, E1, TempTypeEnv), !,
         typecheckExp(TempTypeEnv, E2, NewTypeEnv).
 
 clausedef(typecheckVarUse, [], [state,
@@ -142,22 +145,27 @@ clausedef(typecheckBody, [], [state,
                               body,
                               list(pair(int, type))]). % output type environment
 typecheckBody(_, TypeEnv, body_is(Lhs, Exp), NewTypeEnv) :-
-        typecheckLhs(TypeEnv, Lhs, TempTypeEnv),
-        typecheckExp(TempTypeEnv, Exp, NewTypeEnv).
+        !,
+        typecheckLhs(TypeEnv, Lhs, TempTypeEnv), !,
+        typecheckExp(TempTypeEnv, Exp, NewTypeEnv), !.
 typecheckBody(State, TypeEnv, body_setvar(VarName, Term), NewTypeEnv) :-
-        typecheckVarUse(State, TypeEnv, VarName, Term, NewTypeEnv).
+        !,
+        typecheckVarUse(State, TypeEnv, VarName, Term, NewTypeEnv), !.
 typecheckBody(State, TypeEnv, body_getvar(VarName, Term), NewTypeEnv) :-
-        typecheckVarUse(State, TypeEnv, VarName, Term, NewTypeEnv).
+        !,
+        typecheckVarUse(State, TypeEnv, VarName, Term, NewTypeEnv), !.
 typecheckBody(State, TypeEnv, bodyPair(B1, _, B2), NewTypeEnv) :-
-        typecheckBody(State, TypeEnv, B1, TempTypeEnv),
-        typecheckBody(State, TempTypeEnv, B2, NewTypeEnv).
+        !,
+        typecheckBody(State, TypeEnv, B1, TempTypeEnv), !,
+        typecheckBody(State, TempTypeEnv, B2, NewTypeEnv), !.
 typecheckBody(State, TypeEnv, higherOrderCall(What, ActualParams), NewTypeEnv) :-
-        typeofTerm(State, TypeEnv, What, relationType(FormalParams), TempTypeEnv),
-        typeofTerms(State, TempTypeEnv, ActualParams, FormalParams, NewTypeEnv).
+        !,
+        typeofTerm(State, TypeEnv, What, relationType(FormalParams), TempTypeEnv), !,
+        typeofTerms(State, TempTypeEnv, ActualParams, FormalParams, NewTypeEnv), !.
 typecheckBody(State, TypeEnv, firstOrderCall(Name, ActualParams), NewTypeEnv) :-
         length(ActualParams, Arity),
-        expectedFormalParamTypes(State, Name, Arity, FormalParams),
-        typeofTerms(State, TypeEnv, ActualParams, FormalParams, NewTypeEnv).
+        expectedFormalParamTypes(State, Name, Arity, FormalParams), !,
+        typeofTerms(State, TypeEnv, ActualParams, FormalParams, NewTypeEnv), !.
 
 clausedef(typeofTerm, [], [state,
                            list(pair(int, type)), % input type environment
@@ -167,6 +175,7 @@ typeofTerm(_, TypeEnv, term_var(Variable), Type, NewTypeEnv) :-
         envVariableType(TypeEnv, Variable, Type, NewTypeEnv).
 typeofTerm(_, TypeEnv, term_num(_), intType, TypeEnv).
 typeofTerm(State, TypeEnv, term_lambda(Params, Body), relationType(Types), TypeEnv) :-
+        !,
         typeofTerms(State, TypeEnv, Params, Types, TempTypeEnv),
         typecheckBody(State, TempTypeEnv, Body, _).
 typeofTerm(State, TypeEnv,
@@ -183,10 +192,12 @@ typeofTerm(State, TypeEnv,
         member(typeConstructor(ConstructorName, ConstructorFormalParams), Constructors),
         
         % make sure the types line up
+        !, % we found one - no going back to treating it like an atom
         typeofTerms(State, TypeEnv,
                     ConstructorActualParams,
                     ConstructorFormalParams,
-                    NewTypeEnv).
+                    NewTypeEnv), !.
+typeofTerm(_, TypeEnv, term_constructor(_, []), atomType, TypeEnv).
 
 % int is really an uninstantiated variable
 clausedef(typeofTerms, [], [state,
@@ -199,7 +210,7 @@ typeofTerms(State, TypeEnv, Terms, Types, NewTypeEnv) :-
         foldLeft(Zipped, TypeEnv,
                  lambda([Accum, pair(Term, Type), NewAccum],
                         typeofTerm(State, Accum, Term, Type, NewAccum)),
-                 NewTypeEnv).
+                 NewTypeEnv), !.
 
 % succeeds if the given clause has been marked unsafe
 clausedef(markedUnsafe, [], [atom]).
@@ -213,7 +224,7 @@ typecheckClause(State, clauseclause(Name, FormalParams, Body)) :-
         typeofTerms(State, [], FormalParams, Expected, TypeEnv),
         (markedUnsafe(Name) ->
             true;
-            typecheckBody(State, TypeEnv, Body, _)).
+            typecheckBody(State, TypeEnv, Body, _)), !.
 
 % will add in builtins itself
 clausedef(typecheckClauses, [], [list(defdata), list(defclause),
