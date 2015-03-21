@@ -18,9 +18,9 @@ clausedef(yolo_UNSAFE_close_file, [A], [stream(A)]).
 yolo_UNSAFE_close_file(stream(Stream)) :-
         close(Stream).
 
-clausedef(withOpenStream, [A], [atom, relation([stream(A)])]).
-withOpenStream(Filename, CallThis) :-
-        yolo_UNSAFE_open_file(Filename, read_mode, Stream),
+clausedef(withOpenStream, [A], [atom, mode, relation([stream(A)])]).
+withOpenStream(Filename, Mode, CallThis) :-
+        yolo_UNSAFE_open_file(Filename, Mode, Stream),
         ((call(CallThis, Stream), yolo_UNSAFE_close_file(Stream), !);
          yolo_UNSAFE_close_file(Stream)).
 
@@ -44,12 +44,12 @@ read_clauses_from_stream(Stream, Translator, Result) :-
 
 clausedef(read_clauses_from_file, [A, B], [atom, relation([A, B]), list(B)]).
 read_clauses_from_file(Filename, Translator, Result) :-
-        withOpenStream(Filename,
+        withOpenStream(Filename, read_mode,
                        lambda([Stream],
                               read_clauses_from_stream(Stream, Translator, Result))).
 
 clausedef(yolo_UNSAFE_write_clause, [A, B], [A, stream(B)]).
-yolo_UNSAFE_write_clause(Clause, Stream) :-
+yolo_UNSAFE_write_clause(Clause, stream(Stream)) :-
         copy_term(Clause, Copy),
         numbervars(Copy, 0, _, [singletons(true)]),
         write_term(Stream, Copy, [numbervars(true), quoted(true)]),
@@ -58,7 +58,7 @@ yolo_UNSAFE_write_clause(Clause, Stream) :-
 clausedef(writeClauses, [A], [list(A), atom]).
 writeClauses(Clauses, Filename) :-
         withOpenStream(
-            Filename,
+            Filename, write_mode,
             lambda([Stream],
                    forall(Clauses,
                           lambda([Clause], yolo_UNSAFE_write_clause(Clause, Stream))))).
