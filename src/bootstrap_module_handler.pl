@@ -137,7 +137,7 @@ datadef(renaming, [], [renaming(list(pair(pair(atom, int), atom)), % for clauses
 clausedef(makeRenaming, [], [list(loadedModule), % all loaded modules
                              loadedModule,
                              renaming]).
-makeRenaming(LoadedModules, loadedModule(_, _, UsesModules, LoadedFile),
+makeRenaming(LoadedModules, loadedModule(_, LocalModuleId, UsesModules, LoadedFile),
              renaming(ClauseRenaming, TypeRenaming, ConstructorRenaming, GlobalVarRenaming)) :-
         LoadedFile = loadedFile(defmodule(_, ExportedClauses, ExportedTypes),
                                 _,
