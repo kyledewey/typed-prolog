@@ -2,7 +2,7 @@ module(bootstrap_module_handler, [handleModules/5], []).
 
 use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2,
                          foldRight/4, appendDiffList/3],
-                        [pair, tup3, tup5]).
+                        [pair, tup3, tup4]).
 use_module('bootstrap_syntax.pl', [loadFile/2],
                                   [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                                    typeConstructor, defdata, clauseclause, defglobalvar,
@@ -24,9 +24,13 @@ freshModuleId(N) :-
         NewN is N + 1,
         setvar(counter, NewN).
 
+datadef(moduleUse, [], [moduleUse(int, % id of module used
+                                  list(pair(atom, int)), % clauses used
+                                  list(atom))]). % types used
 datadef(loadedModule, [], [loadedModule(atom, % absolute filename
                                         int, % module ID
-                                        loadedFile)]).
+                                        list(moduleUse), % easier to process use_module directives
+                                        loadedFile)]). % file corresponding to module
 
 clausedef(yolo_UNSAFE_absolute_file_name, [], [atom, % name of file
                                                atom, % relative to another file
@@ -45,26 +49,24 @@ constructorsInDataDefs(DataDefs, Constructors) :-
                 Constructors).
 
 clausedef(allImportedConstructors, [], [list(loadedModule),
-                                        atom, % absolute filename of original module
-                                        list(def_use_module),
+                                        list(moduleUse),
                                         list(atom)]).
-allImportedConstructors(LoadedModules, RelativeTo, UsesModules, Constructors) :-
+allImportedConstructors(LoadedModules, UsesModules, Constructors) :-
         flatMap(UsesModules,
-                lambda([def_use_module(RelFilename, _, ImportedTypes), CurConstructors],
-                       (yolo_UNSAFE_absolute_file_name(RelFilename, RelativeTo, AbsFile),
-                        importedConstructors(LoadedModules, AbsFile, ImportedTypes,
-                                             CurConstructors))),
+                lambda([moduleUse(ImportedId, _, ImportedTypes),
+                        CurConstructors],
+                       (LoadedModule = loadedModule(_, ImportedId, _, _),
+                        member(LoadedModule, LoadedModules),
+                        extractConstructors(LoadedModule, ImportedTypes, CurConstructors))),
                 Constructors).
 
 % Assumes that all dependencies have been loaded in.
-clausedef(importedConstructors, [], [list(loadedModule), % everything loaded in so far
-                                     atom, % absolute filename of imported module
-                                     list(atom), % imported types
-                                     list(atom)]). % imported constructors
-importedConstructors(LoadedModules, Filename, ImportedTypes, Constructors) :-
-        % get the corresponding module
-        member(loadedModule(Filename, _, ModuleFile), LoadedModules),
-        ModuleFile = loadedFile(defmodule(_, _, ExportedTypes), _, DataDefs, _, _, _),
+clausedef(extractConstructors, [], [loadedModule, % module containing them
+                                     list(atom), % extract for these types
+                                     list(atom)]). % resulting constructors
+extractConstructors(loadedModule(_, _, _, LoadedFile),
+                     ImportedTypes, Constructors) :-
+        LoadedFile = loadedFile(defmodule(_, _, ExportedTypes), _, DataDefs, _, _, _),
 
         % ensure the module exports the types we want
         forall(ImportedTypes, lambda([ImportedType], member(ImportedType, ExportedTypes))),
@@ -84,18 +86,23 @@ clausedef(directLoadModule, [], [atom, % absolute filename
                                  list(atom), % in progress loading
                                  list(loadedModule)]). % newly loaded modules
 directLoadModule(FileName, AlreadyLoaded, InProgress,
-                 [loadedModule(FileName, ModuleId, LoadedFile)|RestLoaded]) :-
+                 [loadedModule(FileName, ModuleId, ProcessedUses, LoadedFile)|RestLoaded]) :-
         loadFile(FileName, LoadedFile),
         LoadedFile = loadedFile(_, UsesModules, DataDefs, _, _, _),
 
         % perform the actual loading
-        foldLeft(UsesModules, AlreadyLoaded,
-                 lambda([CurLoaded, def_use_module(CurFileName, _, _), TempLoaded],
-                         loadModule(CurFileName, FileName, CurLoaded, InProgress, TempLoaded)),
-                 RestLoaded),
+        foldLeft(UsesModules, pair(AlreadyLoaded, ProcessedUses),
+                 lambda([pair(CurLoaded,
+                              [moduleUse(OtherId, ClausesUsed, TypesUsed)|RestUsed]),
+                         def_use_module(CurFileName, ClausesUsed, TypesUsed),
+                         pair(TempLoaded, RestUsed)],
+                         (yolo_UNSAFE_absolute_file_name(CurFileName, FileName, AbsFileName),
+                          loadModule(AbsFileName, CurLoaded, InProgress, TempLoaded),
+                          member(loadedModule(AbsFileName, OtherId, _, _), TempLoaded))),
+                 pair(RestLoaded, [])),
 
         % ensure we haven't introduced any duplicate constructors
-        allImportedConstructors(TempLoaded, FileName, UsesModules, ImportedConstructors),
+        allImportedConstructors(RestLoaded, ProcessedUses, ImportedConstructors),
         constructorsInDataDefs(DataDefs, LocalConstructors),
         append(ImportedConstructors, LocalConstructors, AllConstructors),
         is_set(AllConstructors),
@@ -128,14 +135,12 @@ datadef(renaming, [], [renaming(list(pair(pair(atom, int), atom)), % for clauses
                                 list(pair(atom, atom)))]). % for global variables
 % assumes that there are no duplicates
 clausedef(makeRenaming, [], [list(loadedModule), % all loaded modules
-                             atom, % absolute filename of module of interest
+                             loadedModule,
                              renaming]).
-makeRenaming(LoadedModules, Filename,
+makeRenaming(LoadedModules, loadedModule(_, _, UsesModules, LoadedFile),
              renaming(ClauseRenaming, TypeRenaming, ConstructorRenaming, GlobalVarRenaming)) :-
-        % get the corresponding module
-        member(loadedModule(Filename, LocalModuleId, LoadedFile), LoadedModules),
         LoadedFile = loadedFile(defmodule(_, ExportedClauses, ExportedTypes),
-                                UsesModules,
+                                _,
                                 DataDefs,
                                 ClauseDefs,
                                 GlobalVarDefs,
@@ -143,14 +148,10 @@ makeRenaming(LoadedModules, Filename,
         
         % determine renamings for external clauses, types, and constructors
         foldRight(UsesModules, tup3([], [], []),
-                  lambda([def_use_module(UsedFilename, ImportedClauses, ImportedTypes),
+                  lambda([moduleUse(ModuleId, ImportedClauses, ImportedTypes),
                           tup3(CurClauses, CurTypes, CurCons),
                           tup3(NewClauses, NewTypes, NewCons)],
-                         (% determine the ID of the module
-                          yolo_UNSAFE_absolute_file_name(UsedFilename, Filename, ExternalFilename),
-                          member(loadedModule(ExternalFilename, ModuleId, _), LoadedModules),
-
-                          % determine renamings for the imported clauses
+                         (% determine renamings for the imported clauses
                           map(ImportedClauses,
                               lambda([NameArity, pair(NameArity, NewClauseName)],
                                      (NameArity = pair(ClauseName, _),
@@ -168,8 +169,9 @@ makeRenaming(LoadedModules, Filename,
                           append(AddTypes, CurTypes, NewTypes),
 
                           % determine renamings for the imported constructors
-                          importedConstructors(LoadedModules, ExternalFilename, ImportedTypes,
-                                               ImportedConstructors),
+                          LoadedModule = loadedModule(_, ModuleId, _, _),
+                          member(LoadedModule, LoadedModules),
+                          extractConstructors(LoadedModule, ImportedTypes, ImportedConstructors),
                           map(ImportedConstructors,
                               lambda([ConsName, pair(ConsName, NewConsName)],
                                      yolo_UNSAFE_mangled_name(mod_public, ModuleId,
@@ -222,22 +224,19 @@ makeRenaming(LoadedModules, Filename,
         append(LocalTypeRenaming, ExternalTypeRenaming, TypeRenaming),
         append(LocalConstructorRenaming, ExternalConstructorRenaming, ConstructorRenaming).
 
-clausedef(loadModule, [], [atom, % possibly relative filename
-                           atom, % relative to another file
+clausedef(loadModule, [], [atom, % absolute filename
                            list(loadedModule), % already loaded modules
                            list(atom), % modules whose loading is in progress
                            list(loadedModule)]). % newly loaded modules
-loadModule(RelativeFileName, RelativeTo, AlreadyLoaded, InProgress, NewLoaded) :-
-        yolo_UNSAFE_absolute_file_name(RelativeFileName, RelativeTo, AbsoluteFileName),
-        
+loadModule(FileName, AlreadyLoaded, InProgress, NewLoaded) :-
         % don't allow cyclic loading, which would put us in an infinite loop
-        notMember(AbsoluteFileName, InProgress),
+        notMember(FileName, InProgress),
 
         % if we've already loaded this module, we're done
-        (member(loadedModule(AbsoluteFileName, _, _), AlreadyLoaded) ->
+        (member(loadedModule(FileName, _, _, _), AlreadyLoaded) ->
             (NewLoaded = AlreadyLoaded);
-            (directLoadModule(AbsoluteFileName, AlreadyLoaded,
-                              [AbsoluteFileName|InProgress],
+            (directLoadModule(FileName, AlreadyLoaded,
+                              [FileName|InProgress],
                               NewLoaded))).
 
 clausedef(translateVarUse, [], [renaming, atom, term, atom, term]).
@@ -361,10 +360,8 @@ translateLoadedFile(Renaming,
             NewClauses),
         appendDiffList(NewClauses, ClauseInput, ClauseOutput).
 
-% will recursively translate
 clausedef(translateModule, [], [list(loadedModule), % all loaded modules
-                                atom, % absolute filename of module to translate
-                                list(atom), % absolute filename of already translated modules
+                                loadedModule, % what to translate
                                 list(defdata), % diff list
                                 list(defdata),
                                 list(defclause), % diff list
@@ -373,52 +370,33 @@ clausedef(translateModule, [], [list(loadedModule), % all loaded modules
                                 list(defglobalvar),
                                 list(clauseclause), % diff list
                                 list(clauseclause)]).
-translateModule(_, Filename, AlreadyTranslated,
-                DataDefs, DataDefs,
-                ClauseDefs, ClauseDefs,
-                GlobalVarDefs, GlobalVarDefs,
-                Clauses, Clauses) :-
-        % if we've already loaded it, we're done
-        member(Filename, AlreadyTranslated), !.
-translateModule(AllModules, AbsoluteFilename, AlreadyTranslated,
+translateModule(AllModules, LoadedModule,
                 DataDefInput, DataDefOutput,
                 ClauseDefInput, ClauseDefOutput,
                 GlobalVarInput, GlobalVarOutput,
                 ClauseInput, ClauseOutput) :-
-        !,
-        member(loadedModule(AbsoluteFilename, _, LoadedFile), AllModules),
-        LoadedFile = loadedFile(_, UsesModules, _, _, _, _),
-        makeRenaming(AllModules, AbsoluteFilename, Renaming),
+        LoadedModule = loadedModule(_, _, _, LoadedFile),
+        makeRenaming(AllModules, LoadedModule, Renaming),
         translateLoadedFile(Renaming, LoadedFile,
-                            DataDefInput, DataDefTemp,
-                            ClauseDefInput, ClauseDefTemp,
-                            GlobalVarInput, GlobalVarTemp,
-                            ClauseInput, ClauseTemp),
-        !,
-        foldLeft(UsesModules,
-                 tup5([AbsoluteFilename|AlreadyTranslated],
-                      DataDefTemp, ClauseDefTemp, GlobalVarTemp, ClauseTemp),
-                 lambda([tup5(AT, CurDataDef, CurClauseDef, CurGlobalVarDef, CurClause),
-                         def_use_module(RelativeFilename, _, _),
-                         tup5([CurFilename|AT], NewDataDef, NewClauseDef, NewGlobalVarDef, NewClause)],
-                        (yolo_UNSAFE_absolute_file_name(RelativeFilename, AbsoluteFilename,
-                                                        CurFilename),
-                         translateModule(AllModules, CurFilename, AT,
-                                         CurDataDef, NewDataDef,
-                                         CurClauseDef, NewClauseDef,
-                                         CurGlobalVarDef, NewGlobalVarDef,
-                                         CurClause, NewClause))),
-                 tup5(_, DataDefOutput, ClauseDefOutput, GlobalVarOutput, ClauseOutput)).
+                            DataDefInput, DataDefOutput,
+                            ClauseDefInput, ClauseDefOutput,
+                            GlobalVarInput, GlobalVarOutput,
+                            ClauseInput, ClauseOutput), !.
 
 clausedef(handleModules, [], [atom, % Entry point possibly relative filename
                               list(defdata), list(defclause),
                               list(defglobalvar), list(clauseclause)]).
 handleModules(Filename, DataDefs, ClauseDefs, GlobalVarDefs, Clauses) :-
         setvar(counter, 0),
-        loadModule(Filename, './', [], [], LoadedModules), !,
-        yolo_UNSAFE_absolute_file_name(Filename, './', AbsoluteFilename),
-        translateModule(LoadedModules, AbsoluteFilename, [],
-                        DataDefs, [],
-                        ClauseDefs, [],
-                        GlobalVarDefs, [],
-                        Clauses, []).
+        yolo_UNSAFE_absolute_file_name(Filename, './', AbsFilename),
+        directLoadModule(AbsFilename, [], [AbsFilename], LoadedModules), !,
+        foldLeft(LoadedModules, tup4(DataDefs, ClauseDefs, GlobalVarDefs, Clauses),
+                 lambda([tup4(CurDataDefs, CurClauseDefs, CurGlobalVarDefs, CurClauses),
+                         LoadedModule,
+                         tup4(NewDataDefs, NewClauseDefs, NewGlobalVarDefs, NewClauses)],
+                        translateModule(LoadedModules, LoadedModule,
+                                        CurDataDefs, NewDataDefs,
+                                        CurClauseDefs, NewClauseDefs,
+                                        CurGlobalVarDefs, NewGlobalVarDefs,
+                                        CurClauses, NewClauses)),
+                 tup4([], [], [], [])).
