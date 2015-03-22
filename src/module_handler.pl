@@ -1,7 +1,8 @@
 module(module_handler, [handleModules/5], []).
 
 use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2,
-                         foldRight/4, appendDiffList/3],
+                         foldRight/4, appendDiffList/3, onFailure/2,
+                         yolo_UNSAFE_format_shim/2],
                         [pair, tup3, tup4]).
 use_module('syntax.pl', [loadFile/2],
                         [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
@@ -37,7 +38,10 @@ clausedef(yolo_UNSAFE_absolute_file_name, [], [atom, % name of file
                                                atom]). % returned filename
 yolo_UNSAFE_absolute_file_name(RelativeName, RelativeTo, AbsoluteName) :-
         absolute_file_name(RelativeName, AbsoluteName, [relative_to(RelativeTo)]),
-        access_file(AbsoluteName, read).
+        onFailure(
+            lambda([], access_file(AbsoluteName, read)),
+            lambda([], yolo_UNSAFE_format_shim(
+                           'Could not read from possibly nonexistent file: ~w~n', [AbsoluteName]))).
 
 clausedef(constructorsInDataDefs, [], [list(defdata), list(atom)]).
 constructorsInDataDefs(DataDefs, Constructors) :-
