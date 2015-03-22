@@ -3,7 +3,7 @@ module(common, [map/3, filter/3, foldLeft/4, forall/2,
                 zip/3, find/3, beginsWith/2, contains/2,
                 atomContains/2, notMember/2, appendDiffList/3,
                 makeSetFromList/2, setUnion/3, setDifference/3,
-                sortItems/4],
+                sortItems/4, onFailure/2, yolo_UNSAFE_format_shim/2],
                 [pair, tup3, tup4, tup5, tup6, tup7, tup8, option]).
 
 datadef(pair, [A, B], [pair(A, B)]).
@@ -154,3 +154,20 @@ sortItems(Items, Mapper, Comparer, SortedItems) :-
         map(SortedPairs,
             lambda([pair(A, _), A], true),
             SortedItems).
+
+% If rel1 fails, then rel2 is called.  If rel1 succeeds, no backtracking will
+% occur beyond this point, so rel2 will never be called.  If rel2 is called, failure
+% will be propagated upwards.
+clausedef(onFailure, [], [relation([]), relation([])]).
+onFailure(Rel1, _) :-
+        call(Rel1),
+        !.
+onFailure(_, Rel2) :-
+        call(Rel2),
+        !,
+        fail.
+
+clausedef(yolo_UNSAFE_format_shim, [A], [atom, list(A)]).
+yolo_UNSAFE_format_shim(Atom, List) :-
+        format(Atom, List).
+

@@ -5,7 +5,8 @@ use_module('syntax.pl', [],
                          typeConstructor, defdata, clauseclause, defglobalvar,
                          defmodule, def_use_module, loadedFile]).
 use_module('common.pl', [map/3, flatMap/3, zip/3, foldLeft/4, find/3,
-                         atomContains/2, forall/2],
+                         atomContains/2, forall/2, onFailure/2,
+                         yolo_UNSAFE_format_shim/2],
                         [pair, option]).
 
 clausedef(builtinDataDefs, [], [list(defdata)]).
@@ -148,44 +149,73 @@ clausedef(typecheckBody, [], [state,
                               list(pair(int, type)), % input type environment,
                               body,
                               list(pair(int, type))]). % output type environment
-typecheckBody(_, TypeEnv, body_is(Lhs, Exp), NewTypeEnv) :-
+typecheckBody(State, TypeEnv, Body, NewTypeEnv) :-
+        onFailure(
+            lambda([], rawTypecheckBody(State, TypeEnv, Body, NewTypeEnv)),
+            lambda([], yolo_UNSAFE_format_shim('Type error at body ~w~n', [Body]))).
+
+clausedef(rawTypecheckBody, [], [state,
+                                 list(pair(int, type)), % input type environment,
+                                 body,
+                                 list(pair(int, type))]). % output type environment
+rawTypecheckBody(_, TypeEnv, body_is(Lhs, Exp), NewTypeEnv) :-
         !,
         typecheckLhs(TypeEnv, Lhs, TempTypeEnv), !,
         typecheckExp(TempTypeEnv, Exp, NewTypeEnv), !.
-typecheckBody(State, TypeEnv, body_setvar(VarName, Term), NewTypeEnv) :-
+rawTypecheckBody(State, TypeEnv, body_setvar(VarName, Term), NewTypeEnv) :-
         !,
         typecheckVarUse(State, TypeEnv, VarName, Term, NewTypeEnv), !.
-typecheckBody(State, TypeEnv, body_getvar(VarName, Term), NewTypeEnv) :-
+rawTypecheckBody(State, TypeEnv, body_getvar(VarName, Term), NewTypeEnv) :-
         !,
         typecheckVarUse(State, TypeEnv, VarName, Term, NewTypeEnv), !.
-typecheckBody(State, TypeEnv, bodyPair(B1, _, B2), NewTypeEnv) :-
+rawTypecheckBody(State, TypeEnv, bodyPair(B1, _, B2), NewTypeEnv) :-
         !,
         typecheckBody(State, TypeEnv, B1, TempTypeEnv), !,
         typecheckBody(State, TempTypeEnv, B2, NewTypeEnv), !.
-typecheckBody(State, TypeEnv, higherOrderCall(What, ActualParams), NewTypeEnv) :-
+rawTypecheckBody(State, TypeEnv, higherOrderCall(What, ActualParams), NewTypeEnv) :-
         !,
         typeofTerm(State, TypeEnv, What, relationType(FormalParams), TempTypeEnv), !,
         typeofTerms(State, TempTypeEnv, ActualParams, FormalParams, NewTypeEnv), !.
-typecheckBody(State, TypeEnv, firstOrderCall(Name, ActualParams), NewTypeEnv) :-
+rawTypecheckBody(State, TypeEnv, firstOrderCall(Name, ActualParams), NewTypeEnv) :-
         length(ActualParams, Arity),
-        expectedFormalParamTypes(State, Name, Arity, FormalParams), !,
+        FormalParams = _, % introduce variable
+        onFailure(
+            lambda([], expectedFormalParamTypes(State, Name, Arity, FormalParams)),
+            lambda([], yolo_UNSAFE_format_shim('Unknown clause: ~w~n', [pair(Name, Arity)]))),
         typeofTerms(State, TypeEnv, ActualParams, FormalParams, NewTypeEnv), !.
 
 clausedef(typeofTerm, [], [state,
                            list(pair(int, type)), % input type environment
                            term, type,
                            list(pair(int, type))]). % output type environment
-typeofTerm(_, TypeEnv, term_var(Variable), Type, NewTypeEnv) :-
+typeofTerm(State, TypeEnv, Term, ExpectedType, NewTypeEnv) :-
+        onFailure(
+            lambda([], rawTypeofTerm(State, TypeEnv, Term, ExpectedType, NewTypeEnv)),
+            lambda([],
+                   (% try to see what type it actually was
+                    yolo_UNSAFE_format_shim('Type error at term ~w~n', [Term]),
+                    onFailure(
+                        lambda([],
+                               (rawTypeofTerm(State, TypeEnv, Term, ActualType, _),
+                                yolo_UNSAFE_format_shim('\tFound: ~w~n\tExpected: ~w~n', [ActualType, ExpectedType]))),
+                        lambda([],
+                               (yolo_UNSAFE_format_shim('\tFound: UNKNOWN~n\tExpected: ~w~n', [ExpectedType]))))))).
+
+clausedef(rawTypeofTerm, [], [state,
+                              list(pair(int, type)), % input type environment
+                              term, type,
+                              list(pair(int, type))]). % output type environment
+rawTypeofTerm(_, TypeEnv, term_var(Variable), Type, NewTypeEnv) :-
         envVariableType(TypeEnv, Variable, Type, NewTypeEnv).
-typeofTerm(_, TypeEnv, term_num(_), intType, TypeEnv).
-typeofTerm(State, TypeEnv, term_lambda(Params, Body), relationType(Types), TypeEnv) :-
+rawTypeofTerm(_, TypeEnv, term_num(_), intType, TypeEnv).
+rawTypeofTerm(State, TypeEnv, term_lambda(Params, Body), relationType(Types), TypeEnv) :-
         !,
         typeofTerms(State, TypeEnv, Params, Types, TempTypeEnv),
         typecheckBody(State, TempTypeEnv, Body, _).
-typeofTerm(State, TypeEnv,
-           term_constructor(ConstructorName, ConstructorActualParams),
-           constructorType(TypeName, TypeParams),
-           NewTypeEnv) :-
+rawTypeofTerm(State, TypeEnv,
+              term_constructor(ConstructorName, ConstructorActualParams),
+              constructorType(TypeName, TypeParams),
+              NewTypeEnv) :-
 
         % figure out which datadef is in play
         State = state(Mapping, _, _),
@@ -201,7 +231,7 @@ typeofTerm(State, TypeEnv,
                     ConstructorActualParams,
                     ConstructorFormalParams,
                     NewTypeEnv), !.
-typeofTerm(_, TypeEnv, term_constructor(_, []), atomType, TypeEnv).
+rawTypeofTerm(_, TypeEnv, term_constructor(_, []), atomType, TypeEnv).
 
 % int is really an uninstantiated variable
 clausedef(typeofTerms, [], [state,

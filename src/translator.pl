@@ -152,7 +152,8 @@ translateTerm(SeenVars,
         % they will be needed in translating the body of the lambda
         translateTerms(SeenVars, Params, ParamsUsed, TranslatedParams,
                        Defs1, Defs2),
-        translateBody(ParamsUsed, Body, BodyUsed, TranslatedBody,
+        setUnion(SeenVars, ParamsUsed, SeenForBody),
+        translateBody(SeenForBody, Body, BodyUsed, TranslatedBody,
                       Defs2, Defs3),
 
         % Introduce a lambda for this definition.  First, build up
