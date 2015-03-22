@@ -22,7 +22,7 @@ clausedef(withOpenStream, [A], [atom, mode, relation([stream(A)])]).
 withOpenStream(Filename, Mode, CallThis) :-
         yolo_UNSAFE_open_file(Filename, Mode, Stream),
         ((call(CallThis, Stream), yolo_UNSAFE_close_file(Stream), !);
-         yolo_UNSAFE_close_file(Stream)).
+         (yolo_UNSAFE_close_file(Stream), fail)).
 
 clausedef(yolo_UNSAFE_read_clause, [A, B, C], [stream(A), relation([B, C]), option(C)]).
 yolo_UNSAFE_read_clause(stream(Wrapped), Translator, Translated) :-
