@@ -4,7 +4,8 @@ module(syntax, [loadFile/2],
                 defmodule, def_use_module, loadedFile]).
 
 use_module('io.pl', [read_clauses_from_file/3], []).
-use_module('common.pl', [map/3, forall/2, setContains/2], [pair]).
+use_module('common.pl', [map/3, forall/2, setContains/2, onFailure/2,
+                         yolo_UNSAFE_format_shim/2], [pair]).
 
 % BEGIN AST DEFINITION
 %
@@ -94,6 +95,12 @@ yolo_UNSAFE_translate_body_pair_op(',', and).
 yolo_UNSAFE_translate_body_pair_op(';', or).
 yolo_UNSAFE_translate_body_pair_op('->', implies).
 
+clausedef(translateBody, [A], [A, body]).
+translateBody(Input, Output) :-
+        onFailure(
+            lambda([], yolo_UNSAFE_translate_body(Input, Output)),
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in body: ~w~n', [Input]))).
+
 clausedef(yolo_UNSAFE_translate_body, [A], [A, body]).
 yolo_UNSAFE_translate_body(Input, body_is(NewExpLhs, NewExp)) :-
         Input = is(ExpLhs, Exp),
@@ -104,31 +111,37 @@ yolo_UNSAFE_translate_body(Input, body_setvar(VarName, NewTerm)) :-
         Input = setvar(VarName, Term),
         !,
         atom(VarName),
-        yolo_UNSAFE_translate_term(Term, NewTerm).
+        translateTerm(Term, NewTerm).
 yolo_UNSAFE_translate_body(Input, body_getvar(VarName, NewTerm)) :-
         Input = getvar(VarName, Term),
         !,
         atom(VarName),
-        yolo_UNSAFE_translate_term(Term, NewTerm).
+        translateTerm(Term, NewTerm).
 yolo_UNSAFE_translate_body(Input, bodyPair(Body1, NewBodyOp, Body2)) :-
         Input =.. [BodyOp, B1, B2],
         yolo_UNSAFE_translate_body_pair_op(BodyOp, NewBodyOp),
         !,
-        yolo_UNSAFE_translate_body(B1, Body1),
-        yolo_UNSAFE_translate_body(B2, Body2).
+        translateBody(B1, Body1),
+        translateBody(B2, Body2).
 yolo_UNSAFE_translate_body(Input, higherOrderCall(NewWhat, NewParams)) :-
         Input =.. [call, What|Params],
         !,
-        yolo_UNSAFE_translate_term(What, NewWhat),
-        yolo_UNSAFE_translate_terms(Params, NewParams).
+        translateTerm(What, NewWhat),
+        translateTerms(Params, NewParams).
 yolo_UNSAFE_translate_body(Input, firstOrderCall(Name, NewParams)) :-
         Input =.. [Name|Params],
         !,
-        yolo_UNSAFE_translate_terms(Params, NewParams).
+        translateTerms(Params, NewParams).
 
-clausedef(yolo_UNSAFE_translate_terms, [A], [list(A), list(term)]).
-yolo_UNSAFE_translate_terms(Input, Output) :-
-        map(Input, lambda([I, O], yolo_UNSAFE_translate_term(I, O)), Output).
+clausedef(translateTerms, [A], [list(A), list(term)]).
+translateTerms(Input, Output) :-
+        map(Input, lambda([I, O], translateTerm(I, O)), Output).
+
+clausedef(translateTerm, [A], [A, term]).
+translateTerm(Input, Output) :-
+        onFailure(
+            lambda([], yolo_UNSAFE_translate_term(Input, Output)),
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in term: ~w~n', [Input]))).
 
 clausedef(yolo_UNSAFE_translate_term, [A], [A, term]).
 yolo_UNSAFE_translate_term(Var, term_var(Var)) :-
@@ -140,11 +153,11 @@ yolo_UNSAFE_translate_term(Num, term_num(Num)) :-
 yolo_UNSAFE_translate_term(Input, term_lambda(NewParams, NewBody)) :-
         Input =.. [lambda, Params, Body], % differentiate from metalanguage lambdas
         !,
-        yolo_UNSAFE_translate_terms(Params, NewParams),
-        yolo_UNSAFE_translate_body(Body, NewBody).
+        translateTerms(Params, NewParams),
+        translateBody(Body, NewBody).
 yolo_UNSAFE_translate_term(Input, term_constructor(Name, NewParams)) :-
         Input =.. [Name|Params],
-        yolo_UNSAFE_translate_terms(Params, NewParams).
+        translateTerms(Params, NewParams).
 
 clausedef(yolo_UNSAFE_normalize_clause, [A, B], [A, B]).
 yolo_UNSAFE_normalize_clause(Input, Input) :-
@@ -153,9 +166,9 @@ yolo_UNSAFE_normalize_clause(Input, Input) :-
 yolo_UNSAFE_normalize_clause(Clause, Output) :-
         Output = :-(Clause, true).
 
-clausedef(yolo_UNSAFE_translate_types, [A, B], [list(A), list(B), list(type)]).
-yolo_UNSAFE_translate_types(TypeVars, Inputs, Outputs) :-
-        map(Inputs, lambda([I, O], yolo_UNSAFE_translate_type(TypeVars, I, O)), Outputs).
+clausedef(translateTypes, [A, B], [list(A), list(B), list(type)]).
+translateTypes(TypeVars, Inputs, Outputs) :-
+        map(Inputs, lambda([I, O], translateType(TypeVars, I, O)), Outputs).
 
 clausedef(yolo_UNSAFE_translate_type, [A, B], [list(A), B, type]).
 yolo_UNSAFE_translate_type(TypeVars, TypeVar, Result) :-
@@ -168,11 +181,23 @@ yolo_UNSAFE_translate_type(_, atom, atomType) :- !.
 yolo_UNSAFE_translate_type(TypeVars, Input, relationType(NewTypes)) :-
         Input = relation(Types),
         !,
-        yolo_UNSAFE_translate_types(TypeVars, Types, NewTypes).
+        translateTypes(TypeVars, Types, NewTypes).
 yolo_UNSAFE_translate_type(TypeVars, Constructor, constructorType(Name, NewTypes)) :-
         Constructor =.. [Name|Types],
         !,
-        yolo_UNSAFE_translate_types(TypeVars, Types, NewTypes).
+        translateTypes(TypeVars, Types, NewTypes).
+
+clausedef(translateType, [A, B], [list(A), B, type]).
+translateType(TypeVars, Input, Output) :-
+        onFailure(
+            lambda([], yolo_UNSAFE_translate_type(TypeVars, Input, Output)),
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in type: ~w~n', [Input]))).
+
+clausedef(translateClause, [A], [A, readclause]).
+translateClause(Clause, ReadClause) :-
+        onFailure(
+            lambda([], yolo_UNSAFE_translate_clause(Clause, ReadClause)),
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in clause: ~w~n', [Clause]))).
 
 clausedef(yolo_UNSAFE_translate_clause, [A], [A, readclause]).
 yolo_UNSAFE_translate_clause(
@@ -201,7 +226,7 @@ yolo_UNSAFE_translate_clause(
         map(RawConstructors,
             lambda([Cons, typeConstructor(ConstructorName, NewTypes)],
                 (Cons =.. [ConstructorName|Types],
-                 yolo_UNSAFE_translate_types(TypeVars, Types, NewTypes))),
+                 translateTypes(TypeVars, Types, NewTypes))),
             ProcessedConstructors).
 yolo_UNSAFE_translate_clause(
         Input,
@@ -210,7 +235,7 @@ yolo_UNSAFE_translate_clause(
         !,
         atom(Name),
         areTypeVars(TypeVars),
-        yolo_UNSAFE_translate_types(TypeVars, Types, NewTypes).
+        translateTypes(TypeVars, Types, NewTypes).
 yolo_UNSAFE_translate_clause(
         Input,
         readDefGlobalVar(defglobalvar(Name, TypeVars, NewType))) :-
@@ -218,14 +243,14 @@ yolo_UNSAFE_translate_clause(
         !,
         atom(Name),
         areTypeVars(TypeVars),
-        yolo_UNSAFE_translate_type(TypeVars, Type, NewType).
+        translateType(TypeVars, Type, NewType).
 yolo_UNSAFE_translate_clause(
         RawClause,
         readClauseClause(clauseclause(Name, NewParams, NewBody))) :-
         yolo_UNSAFE_normalize_clause(RawClause, :-(Head, Body)),
         Head =.. [Name|Params],
-        yolo_UNSAFE_translate_terms(Params, NewParams),
-        yolo_UNSAFE_translate_body(Body, NewBody).
+        translateTerms(Params, NewParams),
+        translateBody(Body, NewBody).
 
 clausedef(sortClause, [], [readclause,
                            list(defmodule), list(defmodule),
@@ -319,7 +344,7 @@ loadFile(Filename, loadedFile(DefModule, DefUseModule,
                               ClauseClause)) :-
         read_clauses_from_file(
             Filename,
-            lambda([A, B], yolo_UNSAFE_translate_clause(A, B)),
+            lambda([A, B], translateClause(A, B)),
             ReadClauses),
         sortClauses(ReadClauses,
                     [DefModule], [],
