@@ -1,10 +1,10 @@
-module(bootstrap_printer, [writeTranslatedClauses/2], []).
+module(printer, [writeTranslatedClauses/2], []).
 
 use_module('common.pl', [map/3], []).
-use_module('bootstrap_syntax.pl', [],
-                                  [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
-                                   typeConstructor, defdata, clauseclause, defglobalvar,
-                                   defmodule, def_use_module, loadedFile]).
+use_module('syntax.pl', [],
+                        [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
+                         typeConstructor, defdata, clauseclause, defglobalvar,
+                         defmodule, def_use_module, loadedFile]).
 use_module('io.pl', [writeClauses/2], []).
 
 % Handles writing to files.  Assumes that translation has already occurred, so that

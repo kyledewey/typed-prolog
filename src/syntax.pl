@@ -1,7 +1,7 @@
-module(bootstrap_syntax, [loadFile/2],
-                         [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
-                          typeConstructor, defdata, clauseclause, defglobalvar,
-                          defmodule, def_use_module, loadedFile]).
+module(syntax, [loadFile/2],
+               [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
+                typeConstructor, defdata, clauseclause, defglobalvar,
+                defmodule, def_use_module, loadedFile]).
 
 use_module('io.pl', [read_clauses_from_file/3], []).
 use_module('common.pl', [map/3, forall/2, setContains/2], [pair]).

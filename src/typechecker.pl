@@ -1,9 +1,9 @@
-module(bootstrap_typechecker, [typecheckClauses/4], []).
+module(typechecker, [typecheckClauses/4], []).
 
-use_module('bootstrap_syntax.pl', [],
-                                  [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
-                                   typeConstructor, defdata, clauseclause, defglobalvar,
-                                   defmodule, def_use_module, loadedFile]).
+use_module('syntax.pl', [],
+                        [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
+                         typeConstructor, defdata, clauseclause, defglobalvar,
+                         defmodule, def_use_module, loadedFile]).
 use_module('common.pl', [map/3, flatMap/3, zip/3, foldLeft/4, find/3,
                          atomContains/2, forall/2],
                         [pair, option]).

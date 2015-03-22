@@ -1,12 +1,12 @@
-module(bootstrap_translator, [translateClauses/3], [engine_type]).
+module(translator, [translateClauses/3], [engine_type]).
 
 use_module('common.pl', [setUnion/3, setDifference/3, filter/3, setContains/2,
                          makeSetFromList/2, map/3, foldLeft/4, sortItems/4],
                         [pair]).
-use_module('bootstrap_syntax.pl', [],
-                                  [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
-                                   typeConstructor, defdata, clauseclause, defglobalvar,
-                                   defmodule, def_use_module, loadedFile]).
+use_module('syntax.pl', [],
+                        [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
+                         typeConstructor, defdata, clauseclause, defglobalvar,
+                         defmodule, def_use_module, loadedFile]).
 
 datadef(engine_type, [], [swipl, gnuprolog]).
 

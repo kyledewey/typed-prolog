@@ -1,12 +1,12 @@
-module(bootstrap_module_handler, [handleModules/5], []).
+module(module_handler, [handleModules/5], []).
 
 use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2,
                          foldRight/4, appendDiffList/3],
                         [pair, tup3, tup4]).
-use_module('bootstrap_syntax.pl', [loadFile/2],
-                                  [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
-                                   typeConstructor, defdata, clauseclause, defglobalvar,
-                                   defmodule, def_use_module, loadedFile]).
+use_module('syntax.pl', [loadFile/2],
+                        [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
+                         typeConstructor, defdata, clauseclause, defglobalvar,
+                         defmodule, def_use_module, loadedFile]).
 
 datadef(accessModifier, [], [mod_public, mod_private]).
 

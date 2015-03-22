@@ -1,9 +1,9 @@
-module(bootstrap_main, [processFileForSwipl/2, processFileForGnuProlog/2], []).
+module(main, [processFileForSwipl/2, processFileForGnuProlog/2], []).
 
-use_module('bootstrap_module_handler.pl', [handleModules/5], []).
-use_module('bootstrap_typechecker.pl', [typecheckClauses/4], []).
-use_module('bootstrap_translator.pl', [translateClauses/3], [engine_type]).
-use_module('bootstrap_printer.pl', [writeTranslatedClauses/2], []).
+use_module('module_handler.pl', [handleModules/5], []).
+use_module('typechecker.pl', [typecheckClauses/4], []).
+use_module('translator.pl', [translateClauses/3], [engine_type]).
+use_module('printer.pl', [writeTranslatedClauses/2], []).
 
 clausedef(processFile, [], [atom, engine_type, atom]).
 processFile(InputFile, Engine, OutputFile) :-
