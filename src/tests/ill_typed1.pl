@@ -4,7 +4,6 @@ datadef(bool, [], [true, false]).
 
 clausedef(test, [], []).
 test :-
-        Test = lambda([F, Ret],
-                      (call(F, true, FP),
-                       call(F, 0, P),
-                       call(FP, P, Ret))).
+        Test = lambda([F],
+                      (call(F, true),
+                       call(F, 0))).
