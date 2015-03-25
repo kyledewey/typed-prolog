@@ -2,7 +2,7 @@ module(module_handler, [handleModules/5], []).
 
 use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2,
                          foldRight/4, appendDiffList/3, onFailure/2,
-                         yolo_UNSAFE_format_shim/2],
+                         yolo_UNSAFE_format_shim/2, duplicates/2],
                         [pair, tup3, tup4]).
 use_module('syntax.pl', [loadFile/2],
                         [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
@@ -109,7 +109,12 @@ directLoadModule(FileName, AlreadyLoaded, InProgress,
         allImportedConstructors(RestLoaded, ProcessedUses, ImportedConstructors),
         constructorsInDataDefs(DataDefs, LocalConstructors),
         append(ImportedConstructors, LocalConstructors, AllConstructors),
-        is_set(AllConstructors),
+
+        onFailure(
+            lambda([], is_set(AllConstructors)),
+            lambda([],
+                   (duplicates(AllConstructors, DuplicateConstructors),
+                    yolo_UNSAFE_format_shim('Duplicate constructors in scope: ~w~n', [DuplicateConstructors])))),
 
         freshModuleId(ModuleId).
 

@@ -3,7 +3,8 @@ module(common, [map/3, filter/3, foldLeft/4, forall/2,
                 zip/3, find/3, beginsWith/2, contains/2,
                 atomContains/2, notMember/2, appendDiffList/3,
                 makeSetFromList/2, setUnion/3, setDifference/3,
-                sortItems/4, onFailure/2, yolo_UNSAFE_format_shim/2],
+                sortItems/4, onFailure/2, yolo_UNSAFE_format_shim/2,
+                duplicates/2],
                 [pair, tup3, tup4, tup5, tup6, tup7, tup8, option]).
 
 datadef(pair, [A, B], [pair(A, B)]).
@@ -171,3 +172,18 @@ clausedef(yolo_UNSAFE_format_shim, [A], [atom, list(A)]).
 yolo_UNSAFE_format_shim(Atom, List) :-
         format(Atom, List).
 
+% gets the elements that are duplicates, using == for comparison
+clausedef(duplicates, [A], [list(A), list(A)]).
+duplicates(Items, Duplicates) :-
+        foldLeft(Items, pair([], []),
+                 lambda([pair(Seen, Duplicated),
+                         Item,
+                         pair(NewSeen, NewDuplicated)],
+                        ((setContains(Seen, Item) -> 
+                            ((setContains(Duplicated, Item) -> 
+                                (NewDuplicated = Duplicated);
+                                (NewDuplicated = [Item|Duplicated])),
+                             NewSeen = Seen);
+                            (NewSeen = [Item|Seen],
+                             NewDuplicated = Duplicated)))),
+                 pair(_, Duplicates)).
