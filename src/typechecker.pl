@@ -93,23 +93,20 @@ makeState(DataDefs, ClauseDefs, GlobalVarDefs,
         constructorToDataDefMapping(DataDefs, DataDefMapping),
         clauseToClauseDefMapping(ClauseDefs, ClauseDefMapping).
 
-clausedef(expectedFormalParamTypes, [], [state, atom, int, list(type)]).
-expectedFormalParamTypes(state(_, Mapping, _), Name, Arity, Expected) :-
+clausedef(expectedFormalParamTypes, [], [state, % current type state
+                                         atom, % name of the clause
+                                         int, % arity of the clause
+                                         list(type), % generics involved in the
+                                                     % expected types
+                                         list(type)]). % expected types
+expectedFormalParamTypes(state(_, Mapping, _), Name, Arity, Generics, Expected) :-
         member(pair(pair(Name, Arity), RawClause), Mapping),
-        copy_term(RawClause, defclause(_, Generics, Expected)),
+        copy_term(RawClause, defclause(_, Generics, Expected)).
 
-        % Instantiate all the generics to type variables.  These exist only
-        % while typechecking clauses.  They are in place so we don't try
-        % to unify them with something that assumes we know something about
-        % the type, as with:
-        %
-        % clausedef(test, [A], [A]).
-        % test(1).
-        %
-        foldLeft(Generics, 0,
-                 lambda([Accum, typevar(Accum), NewAccum],
-                        NewAccum is Accum),
-                 _).
+% just ignores the generics
+clausedef(expectedFormalParamTypes, [], [state, atom, int, list(type)]).
+expectedFormalParamTypes(State, Name, Arity, Expected) :-
+        expectedFormalParamTypes(State, Name, Arity, _, Expected).
 
 % int is an uninstantiated variable
 clausedef(envVariableType, [], [list(pair(int, type)), % input type environment
@@ -268,11 +265,26 @@ markedUnsafe(Name) :-
 clausedef(typecheckClause, [], [state, clauseclause]).
 typecheckClause(State, clauseclause(Name, FormalParams, Body)) :-
         length(FormalParams, Arity),
-        expectedFormalParamTypes(State, Name, Arity, Expected),
+        expectedFormalParamTypes(State, Name, Arity, Generics, Expected),
+
+        % Instantiate all the generics to type variables.  These exist only
+        % while typechecking clauses.  They are in place so we don't try
+        % to unify them with something that assumes we know something about
+        % the type, as with:
+        %
+        % clausedef(test, [A], [A]).
+        % test(1).
+        %
+        foldLeft(Generics, 0,
+                 lambda([Accum, typevar(Accum), NewAccum],
+                        NewAccum is Accum),
+                 _),
+
         typeofTerms(State, [], FormalParams, Expected, TypeEnv),
         (markedUnsafe(Name) ->
             true;
-            typecheckBody(State, TypeEnv, Body, _)), !.
+            typecheckBody(State, TypeEnv, Body, _)),
+        !.
 
 % will add in builtins itself
 clausedef(typecheckClauses, [], [list(defdata), list(defclause),
