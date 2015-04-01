@@ -38,6 +38,7 @@ builtinClauseDefs(
          defclause(==, [A], [A, A]),
          defclause(is_set, [A], [constructorType(list, [A])]),
          defclause(member, [A], [A, constructorType(list, [A])]),
+         defclause(reverse, [A], [constructorType(list, [A]), constructorType(list, [A])]),
          defclause(copy_term, [A], [A, A]),
          defclause(append, [A], [constructorType(list, [A]),
                                  constructorType(list, [A]),
