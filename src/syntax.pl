@@ -24,10 +24,17 @@ datadef(body, [], [body_is(expLhs, exp),
                    higherOrderCall(term, list(term)),
                    firstOrderCall(atom, list(term))]).
 
-datadef(type, [], [intType, atomType, relationType(list(type)),
-                   constructorType(atom, list(type))]).
+datadef(type, [], [intType, % integers
+                   atomType, % raw atoms
+                   relationType(list(type)), % a relation (higher-order clause)
+                   constructorType(atom, list(type)), % constructor for a user-defined type
+                   typevar(int)]). % placeholder for a parametric type.  Only exists
+                                   % during typechecking.
 
-datadef(defclause, [], [defclause(atom, list(type), list(type))]).
+datadef(defclause, [], [defclause(atom, % name of the clause
+                                  list(type), % generic type parameters.
+                                              % Should be variables.
+                                  list(type))]). % parameter types
 datadef(typeConstructor, [], [typeConstructor(atom, list(type))]).
 
 datadef(defdata, [], [defdata(atom, list(type), list(typeConstructor))]).
