@@ -75,13 +75,15 @@ yolo_UNSAFE_translate_exp_lhs(Num, lhs_num(Num)) :-
         number(Num),
         !.
 
+% The Op hackery is needed to bypass the typechecker.  Currently
+% parameters get typechecked but bodies don't.
 clausedef(yolo_UNSAFE_translate_op, [A], [A, op]).
-yolo_UNSAFE_translate_op('+', plus).
-yolo_UNSAFE_translate_op('-', minus).
-yolo_UNSAFE_translate_op('*', mul).
-yolo_UNSAFE_translate_op('/', div).
-yolo_UNSAFE_translate_op(min, op_min).
-yolo_UNSAFE_translate_op(max, op_max).
+yolo_UNSAFE_translate_op(Op, plus) :- Op = '+', !.
+yolo_UNSAFE_translate_op(Op, minus) :- Op = '-', !.
+yolo_UNSAFE_translate_op(Op, mul) :- Op = '*', !.
+yolo_UNSAFE_translate_op(Op, div) :- Op = '/', !.
+yolo_UNSAFE_translate_op(Op, op_min) :- Op = min, !.
+yolo_UNSAFE_translate_op(Op, op_max) :- Op = max, !.
 
 clausedef(yolo_UNSAFE_translate_exp, [A], [A, exp]).
 yolo_UNSAFE_translate_exp(Var, exp_var(Var)) :-
@@ -98,9 +100,9 @@ yolo_UNSAFE_translate_exp(Structure, binop(Exp1, Op, Exp2)) :-
         yolo_UNSAFE_translate_exp(E2, Exp2).
 
 clausedef(yolo_UNSAFE_translate_body_pair_op, [A], [A, bodyPairOp]).
-yolo_UNSAFE_translate_body_pair_op(',', and).
-yolo_UNSAFE_translate_body_pair_op(';', or).
-yolo_UNSAFE_translate_body_pair_op('->', implies).
+yolo_UNSAFE_translate_body_pair_op(Op, and) :- Op = ',', !.
+yolo_UNSAFE_translate_body_pair_op(Op, or) :- Op = ';', !.
+yolo_UNSAFE_translate_body_pair_op(Op, implies) :- Op = '->', !.
 
 clausedef(translateBody, [A], [A, body]).
 translateBody(Input, Output) :-
@@ -183,8 +185,8 @@ yolo_UNSAFE_translate_type(TypeVars, TypeVar, Result) :-
         !,
         setContains(TypeVars, TypeVar),
         TypeVar = Result.
-yolo_UNSAFE_translate_type(_, int, intType) :- !.
-yolo_UNSAFE_translate_type(_, atom, atomType) :- !.
+yolo_UNSAFE_translate_type(_, Type, intType) :- Type = int, !.
+yolo_UNSAFE_translate_type(_, Type, atomType) :- Type = atom, !.
 yolo_UNSAFE_translate_type(TypeVars, Input, relationType(NewTypes)) :-
         Input = relation(Types),
         !,

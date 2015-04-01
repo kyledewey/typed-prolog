@@ -6,8 +6,8 @@ datadef(stream, [A], [stream(A)]).
 datadef(mode, [], [read_mode, write_mode]).
 
 clausedef(yolo_UNSAFE_translate_mode, [A], [mode, A]).
-yolo_UNSAFE_translate_mode(read_mode, read).
-yolo_UNSAFE_translate_mode(write_mode, write).
+yolo_UNSAFE_translate_mode(read_mode, Op) :- Op = read, !.
+yolo_UNSAFE_translate_mode(write_mode, Op) :- Op = write, !.
 
 clausedef(yolo_UNSAFE_open_file, [A], [atom, mode, stream(A)]).
 yolo_UNSAFE_open_file(Filename, Mode, stream(Stream)) :-
