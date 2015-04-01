@@ -1,8 +1,10 @@
 module(translator, [translateClauses/3], [engine_type]).
 
 use_module('common.pl', [setUnion/3, setDifference/3, filter/3, setContains/2,
-                         makeSetFromList/2, map/3, foldLeft/4, sortItems/4],
-                        [pair]).
+                         makeSetFromList/2, map/3, foldLeft/4, sortItems/4,
+                         flatMap/3, beginsWith/2, makeSetFromList/2, notMember/2,
+                         find/3, setsOverlap/2],
+                        [pair, option]).
 use_module('syntax.pl', [],
                         [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                          typeConstructor, defdata, clauseclause, defglobalvar,
@@ -200,6 +202,89 @@ translateClause(clauseclause(Name, Params, Body),
         translateTerms([], Params, Used, NewParams, InputClauses, TempClauses),
         translateBody(Used, Body, _, NewBody, TempClauses, OutputClauses).
 
+% assumes that we have a purely first-order program.  That is, translation
+% has already occurred.
+clausedef(bodyDirectlyCalls, [], [body, % the body to check
+                                  list(pair(atom, int)), % input diff list
+                                  list(pair(atom, int))]). % output diff list
+bodyDirectlyCalls(body_is(_, _), List, List).
+bodyDirectlyCalls(body_setvar(_, _), List, List).
+bodyDirectlyCalls(body_getvar(_, _), List, List).
+bodyDirectlyCalls(bodyPair(Body1, _, Body2), Input, Output) :-
+        bodyDirectlyCalls(Body1, Input, Temp),
+        bodyDirectlyCalls(Body2, Temp, Output).
+bodyDirectlyCalls(firstOrderCall(Name, Params), [pair(Name, Arity)|Rest], Rest) :-
+        length(Params, Arity).
+
+clausedef(bodyDirectlyCalls, [], [body, list(pair(atom, int))]).
+bodyDirectlyCalls(Body, Calls) :-
+        bodyDirectlyCalls(Body, Calls, []).
+
+clausedef(clauseNameArity, [], [clauseclause, atom, int]).
+clauseNameArity(clauseclause(Name, Params, _), Name, Arity) :-
+        length(Params, Arity).
+
+clausedef(callsUnknownLambda, [], [list(pair(atom, int)), % what is called
+                                   list(atom)]). % existing lambdas
+callsUnknownLambda(CalledClauses, ExistingLambdas) :-
+        find(CalledClauses,
+             lambda([pair(Name, _)],
+                    (isCallLambda(Name),
+                     notMember(Name, ExistingLambdas))),
+             some(_)).
+
+clausedef(trimDeadClauses, [], [list(clauseclause), % input clauses
+                                list(pair(pair(atom, int), list(pair(atom, int)))), % called mapping
+                                list(atom), % called lambdas
+                                list(pair(atom, int)), % blacklist - call anything here and die
+                                list(clauseclause), % output clauses accumulator
+                                list(clauseclause)]). % output clauses
+trimDeadClauses([], _, _, _, Accum, RevAccum) :-
+        reverse(Accum, RevAccum).
+trimDeadClauses([H|T], Mapping, CalledLambdas, Blacklist, Accum, Output) :-
+        clauseNameArity(H, Name, Arity),
+        Key = pair(Name, Arity),
+        member(pair(Key, ClauseCalls), Mapping),
+        ((setsOverlap(ClauseCalls, Blacklist);
+          callsUnknownLambda(ClauseCalls, CalledLambdas)) ->
+            % add it to the blacklist and restart
+            (reverse(Accum, RevAccum),
+             append(RevAccum, T, NewInput),
+             trimDeadClauses(NewInput, Mapping, CalledLambdas, [Key|Blacklist],
+                             [], Output));
+            (trimDeadClauses(T, Mapping, CalledLambdas, Blacklist, [H|Accum], Output))).
+
+clausedef(isCallLambda, [], [atom]).
+isCallLambda(Name) :-
+        atom_codes('call_lambda', CallList),
+        atom_codes(Name, NameList),
+        beginsWith(NameList, CallList).
+
+% Currently, everything could be an entry point, so this is very inexact.
+% If we see a call to a lambda clause that doesn't exist, then we trim
+% out the clause.  We recursively trim out things that call those.
+clausedef(trimDeadClauses, [], [list(clauseclause), % input clauses
+                                list(clauseclause)]). % output clauses
+trimDeadClauses(InputClauses, OutputClauses) :-
+        % figure out which lambdas are in play
+        flatMap(InputClauses,
+                lambda([clauseclause(Name, _, _), Result],
+                       (isCallLambda(Name) ->
+                           (Result = [Name]);
+                           (Result = []))),
+                RawCalledLambdas),
+        makeSetFromList(RawCalledLambdas, CalledLambdas),
+
+        % If something calls a lambda not in that list, throw it out.
+        % We then need to throw out everything else that calls that.
+        map(InputClauses,
+            lambda([Clause, pair(pair(Name, Arity), ClauseMapping)],
+                   (Clause = clauseclause(Name, Params, Body),
+                    length(Params, Arity),
+                    bodyDirectlyCalls(Body, ClauseMapping))),
+            Mapping),
+        trimDeadClauses(InputClauses, Mapping, CalledLambdas, [], [], OutputClauses).
+
 clausedef(translateClauses, [], [list(clauseclause),
                                  engine_type,
                                  list(clauseclause)]).
@@ -216,4 +301,5 @@ translateClauses(Clauses, Engine, NewClauses) :-
                   lambda([clauseclause(Name, _, _), Name], true),
                   lambda([Name1, Name2], Name1 @> Name2),
                   SortedAuxClauses),
-        append(SortedAuxClauses, UserClauses, NewClauses).
+        append(SortedAuxClauses, UserClauses, UntrimmedClauses),
+        trimDeadClauses(UntrimmedClauses, NewClauses).

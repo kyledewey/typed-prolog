@@ -4,7 +4,7 @@ module(common, [map/3, filter/3, foldLeft/4, forall/2,
                 atomContains/2, notMember/2, appendDiffList/3,
                 makeSetFromList/2, setUnion/3, setDifference/3,
                 sortItems/4, onFailure/2, yolo_UNSAFE_format_shim/2,
-                duplicates/2],
+                duplicates/2, setsOverlap/2],
                 [pair, tup3, tup4, tup5, tup6, tup7, tup8, option]).
 
 datadef(pair, [A, B], [pair(A, B)]).
@@ -71,6 +71,12 @@ setContains([H|_], Item) :-
         H == Item.
 setContains([_|T], Item) :-
         setContains(T, Item).
+
+clausedef(setsOverlap, [A], [list(A), list(A)]).
+setsOverlap(Set1, Set2) :-
+        find(Set1,
+             lambda([Item], setContains(Set2, Item)),
+             some(_)).
 
 clausedef(find, [A], [list(A), relation([A]), option(A)]).
 find([], _, none).
