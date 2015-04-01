@@ -23,6 +23,7 @@ builtinClauseDefs(
          defclause(fail, [], []),
          defclause('!', [], []),
          defclause(var, [A], [A]),
+         defclause(nonvar, [A], [A]),
          defclause(atom, [A], [A]),
          defclause(>, [], [intType, intType]),
          defclause(<, [], [intType, intType]),
