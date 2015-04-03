@@ -76,7 +76,7 @@ clausedef(setsOverlap, [A], [list(A), list(A)]).
 setsOverlap(Set1, Set2) :-
         find(Set1,
              lambda([Item], setContains(Set2, Item)),
-             some(_)).
+             some(_)), !.
 
 clausedef(find, [A], [list(A), relation([A]), option(A)]).
 find([], _, none).

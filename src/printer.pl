@@ -27,8 +27,8 @@ translateBodyPairOp(or, ';').
 translateBodyPairOp(implies, '->').
 
 clausedef(yolo_UNSAFE_translate_exp, [A], [exp, A]).
-yolo_UNSAFE_translate_exp(exp_var(X), X).
-yolo_UNSAFE_translate_exp(exp_num(N), N).
+yolo_UNSAFE_translate_exp(exp_var(X), NewX) :- X = NewX.
+yolo_UNSAFE_translate_exp(exp_num(N), NewN) :- N = NewN.
 yolo_UNSAFE_translate_exp(binop(E1, Op, E2), Output) :-
         translateOp(Op, NewOp),
         yolo_UNSAFE_translate_exp(E1, NewE1),
@@ -36,8 +36,8 @@ yolo_UNSAFE_translate_exp(binop(E1, Op, E2), Output) :-
         Output =.. [NewOp, NewE1, NewE2].
 
 clausedef(yolo_UNSAFE_translate_exp_lhs, [A], [expLhs, A]).
-yolo_UNSAFE_translate_exp_lhs(lhs_var(X), X).
-yolo_UNSAFE_translate_exp_lhs(lhs_num(N), N).
+yolo_UNSAFE_translate_exp_lhs(lhs_var(X), NewX) :- X = NewX.
+yolo_UNSAFE_translate_exp_lhs(lhs_num(N), NewN) :- N = NewN.
 
 clausedef(translateTerms, [A], [list(term), list(A)]).
 translateTerms(Terms, Result) :-
@@ -46,8 +46,8 @@ translateTerms(Terms, Result) :-
             Result).
 
 clausedef(yolo_UNSAFE_translate_term, [A], [term, A]).
-yolo_UNSAFE_translate_term(term_var(X), X).
-yolo_UNSAFE_translate_term(term_num(N), N).
+yolo_UNSAFE_translate_term(term_var(X), NewX) :- X = NewX.
+yolo_UNSAFE_translate_term(term_num(N), NewN) :- N = NewN.
 % lambdas have been translated away
 yolo_UNSAFE_translate_term(term_constructor(Name, Terms), Result) :-
         translateTerms(Terms, NewTerms),

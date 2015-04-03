@@ -231,7 +231,7 @@ callsUnknownLambda(CalledClauses, ExistingLambdas) :-
              lambda([pair(Name, _)],
                     (isCallLambda(Name),
                      notMember(Name, ExistingLambdas))),
-             some(_)).
+             some(_)), !.
 
 clausedef(trimDeadClauses, [], [list(clauseclause), % input clauses
                                 list(pair(pair(atom, int), list(pair(atom, int)))), % called mapping

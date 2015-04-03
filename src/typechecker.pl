@@ -118,6 +118,8 @@ envVariableType(TypeEnv, Variable, Type, NewTypeEnv) :-
         find(TypeEnv,
              lambda([pair(EnvVariable, _)], Variable == EnvVariable),
              FindResult),
+        !, % if we were to backtrack, we'd always be able to add a new
+           % variable
         (FindResult = some(pair(_, EnvType)) ->
             (Type = EnvType,
              TypeEnv = NewTypeEnv);

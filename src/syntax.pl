@@ -68,12 +68,14 @@ allAtoms(List) :-
         forall(List, lambda([A], atom(A))).
 
 clausedef(yolo_UNSAFE_translate_exp_lhs, [A], [A, expLhs]).
-yolo_UNSAFE_translate_exp_lhs(Var, lhs_var(Var)) :-
+yolo_UNSAFE_translate_exp_lhs(Var, lhs_var(NewVar)) :-
         var(Var),
-        !.
-yolo_UNSAFE_translate_exp_lhs(Num, lhs_num(Num)) :-
+        !,
+        Var = NewVar.
+yolo_UNSAFE_translate_exp_lhs(Num, lhs_num(NewNum)) :-
         number(Num),
-        !.
+        !,
+        Num = NewNum.
 
 % The Op hackery is needed to bypass the typechecker.  Currently
 % parameters get typechecked but bodies don't.
@@ -86,12 +88,14 @@ yolo_UNSAFE_translate_op(Op, op_min) :- Op = min, !.
 yolo_UNSAFE_translate_op(Op, op_max) :- Op = max, !.
 
 clausedef(yolo_UNSAFE_translate_exp, [A], [A, exp]).
-yolo_UNSAFE_translate_exp(Var, exp_var(Var)) :-
+yolo_UNSAFE_translate_exp(Var, exp_var(NewVar)) :-
         var(Var),
-        !.
-yolo_UNSAFE_translate_exp(Num, exp_num(Num)) :-
+        !,
+        Var = NewVar.
+yolo_UNSAFE_translate_exp(Num, exp_num(NewNum)) :-
         number(Num),
-        !.
+        !,
+        Num = NewNum.
 yolo_UNSAFE_translate_exp(Structure, binop(Exp1, Op, Exp2)) :-
         Structure =.. [RawOp, E1, E2],
         !,
@@ -153,12 +157,14 @@ translateTerm(Input, Output) :-
             lambda([], yolo_UNSAFE_format_shim('Syntax error in term: ~w~n', [Input]))).
 
 clausedef(yolo_UNSAFE_translate_term, [A], [A, term]).
-yolo_UNSAFE_translate_term(Var, term_var(Var)) :-
+yolo_UNSAFE_translate_term(Var, term_var(NewVar)) :-
         var(Var),
-        !.
-yolo_UNSAFE_translate_term(Num, term_num(Num)) :-
+        !,
+        Var = NewVar.
+yolo_UNSAFE_translate_term(Num, term_num(NewNum)) :-
         number(Num),
-        !.
+        !,
+        Num = NewNum.
 yolo_UNSAFE_translate_term(Input, term_lambda(NewParams, NewBody)) :-
         Input =.. [lambda, Params, Body], % differentiate from metalanguage lambdas
         !,
