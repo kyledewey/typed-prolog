@@ -5,6 +5,13 @@ use_module('typechecker.pl', [typecheckClauses/4], []).
 use_module('translator.pl', [translateClauses/3], [engine_type]).
 use_module('printer.pl', [writeTranslatedClauses/2], []).
 
+% This is a hack so that the compiler flags itself as using CLP.
+% We need this under SWI-PL in order to properly parse programs that
+% use CLP.
+clausedef(useClp, [], []).
+useClp :-
+        X #= X.
+
 clausedef(processFile, [], [atom, engine_type, atom]).
 processFile(InputFile, Engine, OutputFile) :-
         handleModules(InputFile, DataDefs, ClauseDefs, GlobalVarDefs, Clauses), !,

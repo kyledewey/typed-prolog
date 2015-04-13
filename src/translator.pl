@@ -231,7 +231,8 @@ callsUnknownLambda(CalledClauses, ExistingLambdas) :-
              lambda([pair(Name, _)],
                     (isCallLambda(Name),
                      notMember(Name, ExistingLambdas))),
-             some(_)), !.
+             some(_)),
+        !.
 
 clausedef(trimDeadClauses, [], [list(clauseclause), % input clauses
                                 list(pair(pair(atom, int), list(pair(atom, int)))), % called mapping
@@ -260,12 +261,64 @@ isCallLambda(Name) :-
         atom_codes(Name, NameList),
         beginsWith(NameList, CallList).
 
+clausedef(clauseCallsMapping, [], [list(clauseclause),
+                                   list(pair(pair(atom, int), list(pair(atom, int))))]).
+clauseCallsMapping(InputClauses, Mapping) :-
+        map(InputClauses,
+            lambda([clauseclause(Name, Params, Body),
+                    pair(pair(Name, Arity), ClauseMapping)],
+                   (length(Params, Arity),
+                    bodyDirectlyCalls(Body, ClauseMapping))),
+            Mapping).
+
+clausedef(clpClauseName, [], [atom]).
+clpClauseName(#>).
+clpClauseName(#<).
+clpClauseName(#=<).
+clpClauseName(#>=).
+clpClauseName(#=).
+clpClauseName(#\=).
+
+clausedef(clpClause, [], [pair(atom, int)]).
+clpClause(pair(Name, 2)) :-
+        clpClauseName(Name).
+
+% succeeds if a CLP constraint is used
+clausedef(clpUsed, [], [list(pair(pair(atom, int), list(pair(atom, int))))]).
+clpUsed(Mapping) :-
+        find(Mapping,
+             lambda([pair(_, ThisCalls)],
+                    find(ThisCalls,
+                         lambda([Pair], clpClause(Pair)),
+                         some(_))),
+             some(_)),
+        !.
+
+clausedef(makeDirective, [], [term, clauseclause]).
+makeDirective(Term, clauseclause(':-', [Term], firstOrderCall('true', []))).
+
+clausedef(handleClp, [], [list(pair(pair(atom, int), list(pair(atom, int)))),
+                          engine_type,
+                          list(clauseclause),
+                          list(clauseclause)]).
+handleClp(Mapping, swipl, InputClauses, OutputClauses) :-
+        (clpUsed(Mapping) ->
+            (makeDirective(
+                term_constructor('use_module',
+                                 [term_constructor('library',
+                                                   [term_constructor('clpfd', [])])]),
+                UseClpfd),
+             OutputClauses = [UseClpfd|InputClauses]);
+            (InputClauses = OutputClauses)).
+handleClp(_, gnuprolog, Clauses, Clauses).
+
 % Currently, everything could be an entry point, so this is very inexact.
 % If we see a call to a lambda clause that doesn't exist, then we trim
 % out the clause.  We recursively trim out things that call those.
-clausedef(trimDeadClauses, [], [list(clauseclause), % input clauses
+clausedef(trimDeadClauses, [], [list(pair(pair(atom, int), list(pair(atom, int)))),
+                                list(clauseclause), % input clauses
                                 list(clauseclause)]). % output clauses
-trimDeadClauses(InputClauses, OutputClauses) :-
+trimDeadClauses(Mapping, InputClauses, OutputClauses) :-
         % figure out which lambdas are in play
         flatMap(InputClauses,
                 lambda([clauseclause(Name, _, _), Result],
@@ -277,18 +330,12 @@ trimDeadClauses(InputClauses, OutputClauses) :-
 
         % If something calls a lambda not in that list, throw it out.
         % We then need to throw out everything else that calls that.
-        map(InputClauses,
-            lambda([Clause, pair(pair(Name, Arity), ClauseMapping)],
-                   (Clause = clauseclause(Name, Params, Body),
-                    length(Params, Arity),
-                    bodyDirectlyCalls(Body, ClauseMapping))),
-            Mapping),
         trimDeadClauses(InputClauses, Mapping, CalledLambdas, [], [], OutputClauses).
 
 clausedef(translateClauses, [], [list(clauseclause),
                                  engine_type,
                                  list(clauseclause)]).
-translateClauses(Clauses, Engine, NewClauses) :-
+translateClauses(Clauses, Engine, FinalClauses) :-
         setvar(counter, 0),
         setvar(engine, Engine),
         foldLeft(Clauses, pair(UserClauses, AuxClauses),
@@ -302,4 +349,6 @@ translateClauses(Clauses, Engine, NewClauses) :-
                   lambda([Name1, Name2], Name1 @> Name2),
                   SortedAuxClauses),
         append(SortedAuxClauses, UserClauses, UntrimmedClauses),
-        trimDeadClauses(UntrimmedClauses, NewClauses).
+        clauseCallsMapping(UntrimmedClauses, Mapping),
+        trimDeadClauses(Mapping, UntrimmedClauses, TrimmedClauses),
+        handleClp(Mapping, Engine, TrimmedClauses, FinalClauses).
