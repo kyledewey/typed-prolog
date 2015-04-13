@@ -129,10 +129,19 @@ translateBody(SeenVars,
         yolo_UNSAFE_call_lambda_label(Arity, CallName).
 translateBody(SeenVars,
               firstOrderCall(Name, Terms), Used,
-              firstOrderCall(Name, NewTerms),
+              TranslatedCall,
               Defs1, DefsFinal) :-
         !,
-        translateTerms(SeenVars, Terms, Used, NewTerms, Defs1, DefsFinal).
+        getvar(engine, Engine),
+        translateTerms(SeenVars, Terms, Used, NewTerms, Defs1, DefsFinal),
+        translateCall(Engine, Name, NewTerms, TranslatedCall).
+
+clausedef(translateCall, [], [engine_type, % what engine we're under
+                              atom, % what is called
+                              list(term), % translated terms passed to the call
+                              body]). % resulting body
+translateCall(swipl, fd_labeling, Terms, firstOrderCall('label', Terms)) :- !.
+translateCall(_, Name, Terms, firstOrderCall(Name, Terms)).
 
 clausedef(translateTerm, [], [list(int), % previously seen variables
                               term, % what to translate
