@@ -1,7 +1,7 @@
 module(syntax, [loadFile/2],
                [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                 typeConstructor, defdata, clauseclause, defglobalvar,
-                defmodule, def_use_module, loadedFile]).
+                defmodule, def_use_module, loadedFile, bodyUnaryOp]).
 
 use_module('io.pl', [read_clauses_from_file/3], []).
 use_module('common.pl', [map/3, forall/2, setContains/2, onFailure/2,
@@ -17,9 +17,11 @@ datadef(term, [], [term_var(int), term_num(int),
                    term_lambda(list(term), body),
                    term_constructor(atom, list(term))]).
 
+datadef(bodyUnaryOp, [], [not]).
 datadef(bodyPairOp, [], [and, or, implies]).
 datadef(body, [], [body_is(expLhs, exp),
                    body_setvar(atom, term), body_getvar(atom, term),
+                   bodyUnary(bodyUnaryOp, body),
                    bodyPair(body, bodyPairOp, body),
                    higherOrderCall(term, list(term)),
                    firstOrderCall(atom, list(term))]).
@@ -108,6 +110,9 @@ yolo_UNSAFE_translate_body_pair_op(Op, and) :- Op = ',', !.
 yolo_UNSAFE_translate_body_pair_op(Op, or) :- Op = ';', !.
 yolo_UNSAFE_translate_body_pair_op(Op, implies) :- Op = '->', !.
 
+clausedef(yolo_UNSAFE_translate_unary_body_op, [A], [A, bodyUnaryOp]).
+yolo_UNSAFE_translate_unary_body_op(Op, not) :- Op = '\\+', !.
+
 clausedef(translateBody, [A], [A, body]).
 translateBody(Input, Output) :-
         onFailure(
@@ -130,6 +135,11 @@ yolo_UNSAFE_translate_body(Input, body_getvar(VarName, NewTerm)) :-
         !,
         atom(VarName),
         translateTerm(Term, NewTerm).
+yolo_UNSAFE_translate_body(Input, bodyUnary(NewOp, NewBody)) :-
+        Input =.. [Op, Body],
+        yolo_UNSAFE_translate_unary_body_op(Op, NewOp),
+        !,
+        translateBody(Body, NewBody).
 yolo_UNSAFE_translate_body(Input, bodyPair(Body1, NewBodyOp, Body2)) :-
         Input =.. [BodyOp, B1, B2],
         yolo_UNSAFE_translate_body_pair_op(BodyOp, NewBodyOp),

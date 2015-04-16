@@ -5,7 +5,7 @@ use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2,
                          yolo_UNSAFE_format_shim/2, duplicates/2],
                         [pair, tup3, tup4]).
 use_module('syntax.pl', [loadFile/2],
-                        [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
+                        [op, exp, expLhs, term, body, type, defclause,
                          typeConstructor, defdata, clauseclause, defglobalvar,
                          defmodule, def_use_module, loadedFile]).
 
@@ -259,6 +259,8 @@ translateBody(Renaming, body_setvar(VarName, Term), body_setvar(NewVarName, NewT
         translateVarUse(Renaming, VarName, Term, NewVarName, NewTerm).
 translateBody(Renaming, body_getvar(VarName, Term), body_getvar(NewVarName, NewTerm)) :-
         translateVarUse(Renaming, VarName, Term, NewVarName, NewTerm).
+translateBody(Renaming, bodyUnary(Op, Body), bodyUnary(Op, NewBody)) :-
+        translateBody(Renaming, Body, NewBody).
 translateBody(Renaming, bodyPair(B1, Op, B2), bodyPair(NewB1, Op, NewB2)) :-
         translateBody(Renaming, B1, NewB1),
         translateBody(Renaming, B2, NewB2).

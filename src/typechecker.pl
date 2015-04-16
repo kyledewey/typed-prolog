@@ -1,7 +1,7 @@
 module(typechecker, [typecheckClauses/4], []).
 
 use_module('syntax.pl', [],
-                        [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
+                        [op, exp, expLhs, term, body, type, defclause,
                          typeConstructor, defdata, clauseclause, defglobalvar,
                          defmodule, def_use_module, loadedFile]).
 use_module('common.pl', [map/3, flatMap/3, zip/3, foldLeft/4, find/3,
@@ -190,6 +190,9 @@ rawTypecheckBody(State, TypeEnv, body_setvar(VarName, Term), NewTypeEnv) :-
 rawTypecheckBody(State, TypeEnv, body_getvar(VarName, Term), NewTypeEnv) :-
         !,
         typecheckVarUse(State, TypeEnv, VarName, Term, NewTypeEnv), !.
+rawTypecheckBody(State, TypeEnv, bodyUnary(_, Body), NewTypeEnv) :-
+        !,
+        typecheckBody(State, TypeEnv, Body, NewTypeEnv), !.
 rawTypecheckBody(State, TypeEnv, bodyPair(B1, _, B2), NewTypeEnv) :-
         !,
         typecheckBody(State, TypeEnv, B1, TempTypeEnv), !,

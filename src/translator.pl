@@ -6,7 +6,7 @@ use_module('common.pl', [setUnion/3, setDifference/3, filter/3, setContains/2,
                          find/3, setsOverlap/2],
                         [pair, option]).
 use_module('syntax.pl', [],
-                        [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
+                        [op, exp, expLhs, term, body, type, defclause,
                          typeConstructor, defdata, clauseclause, defglobalvar,
                          defmodule, def_use_module, loadedFile]).
 
@@ -110,6 +110,12 @@ translateBody(SeenVars,
         getvar(engine, Engine),
         engineGetVarName(Engine, VarGetName),
         translateTerm(SeenVars, Term, Used, NewTerm, Defs1, DefsFinal).
+translateBody(SeenVars,
+              bodyUnary(Op, Body), Used,
+              bodyUnary(Op, NewBody),
+              Defs1, DefsFinal) :-
+        !,
+        translateBody(SeenVars, Body, Used, NewBody, Defs1, DefsFinal).
 translateBody(SeenVars,
               bodyPair(B1, Op, B2), Used,
               bodyPair(NewB1, Op, NewB2),
@@ -219,6 +225,8 @@ clausedef(bodyDirectlyCalls, [], [body, % the body to check
 bodyDirectlyCalls(body_is(_, _), List, List).
 bodyDirectlyCalls(body_setvar(_, _), List, List).
 bodyDirectlyCalls(body_getvar(_, _), List, List).
+bodyDirectlyCalls(bodyUnary(_, Body), Input, Output) :-
+        bodyDirectlyCalls(Body, Input, Output).
 bodyDirectlyCalls(bodyPair(Body1, _, Body2), Input, Output) :-
         bodyDirectlyCalls(Body1, Input, Temp),
         bodyDirectlyCalls(Body2, Temp, Output).

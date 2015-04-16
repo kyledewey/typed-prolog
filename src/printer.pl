@@ -4,7 +4,7 @@ use_module('common.pl', [map/3], []).
 use_module('syntax.pl', [],
                         [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                          typeConstructor, defdata, clauseclause, defglobalvar,
-                         defmodule, def_use_module, loadedFile]).
+                         defmodule, def_use_module, loadedFile, bodyUnaryOp]).
 use_module('io.pl', [writeClauses/2], []).
 
 % Handles writing to files.  Assumes that translation has already occurred, so that
@@ -20,6 +20,9 @@ translateOp(mul, '*').
 translateOp(div, '/').
 translateOp(op_min, min).
 translateOp(op_max, max).
+
+clausedef(translateBodyUnaryOp, [], [bodyUnaryOp, atom]).
+translateBodyUnaryOp(not, '\\+').
 
 clausedef(translateBodyPairOp, [], [bodyPairOp, atom]).
 translateBodyPairOp(and, ',').
@@ -59,6 +62,10 @@ yolo_UNSAFE_translate_body(body_is(Lhs, Exp), Result) :-
         yolo_UNSAFE_translate_exp(Exp, NewExp),
         Result =.. [is, NewLhs, NewExp].
 % setvar and getvar has been translated away
+yolo_UNSAFE_translate_body(bodyUnary(Op, Body), Result) :-
+        translateBodyUnaryOp(Op, NewOp),
+        yolo_UNSAFE_translate_body(Body, NewBody),
+        Result =.. [NewOp, NewBody].
 yolo_UNSAFE_translate_body(bodyPair(B1, Op, B2), Result) :-
         translateBodyPairOp(Op, NewOp),
         yolo_UNSAFE_translate_body(B1, NewB1),

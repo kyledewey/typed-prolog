@@ -94,6 +94,7 @@ private_6_translateOp(public_2_mul,*).
 private_6_translateOp(public_2_div,/).
 private_6_translateOp(public_2_op_min,min).
 private_6_translateOp(public_2_op_max,max).
+private_6_translateBodyUnaryOp(public_2_not,\+).
 private_6_translateBodyPairOp(public_2_and,',').
 private_6_translateBodyPairOp(public_2_or,;).
 private_6_translateBodyPairOp(public_2_implies,->).
@@ -107,6 +108,7 @@ private_6_yolo_UNSAFE_translate_term(public_2_term_var(A),B):-A=B.
 private_6_yolo_UNSAFE_translate_term(public_2_term_num(A),B):-A=B.
 private_6_yolo_UNSAFE_translate_term(public_2_term_constructor(C,A),B):-private_6_translateTerms(A,D),B=..[C|D].
 private_6_yolo_UNSAFE_translate_body(public_2_body_is(A,B),C):-private_6_yolo_UNSAFE_translate_exp_lhs(A,D),private_6_yolo_UNSAFE_translate_exp(B,E),C=..[is,D,E].
+private_6_yolo_UNSAFE_translate_body(public_2_bodyUnary(A,B),C):-private_6_translateBodyUnaryOp(A,D),private_6_yolo_UNSAFE_translate_body(B,E),C=..[D,E].
 private_6_yolo_UNSAFE_translate_body(public_2_bodyPair(B,A,C),D):-private_6_translateBodyPairOp(A,E),private_6_yolo_UNSAFE_translate_body(B,F),private_6_yolo_UNSAFE_translate_body(C,G),D=..[E,F,G].
 private_6_yolo_UNSAFE_translate_body(public_2_firstOrderCall(C,A),B):-private_6_translateTerms(A,D),B=..[C|D].
 private_6_yolo_UNSAFE_translate_clause(public_2_clauseclause(C,A,B),F):-private_6_translateTerms(A,D),private_6_yolo_UNSAFE_translate_body(B,E),G=..[C|D], (E==true->F=G;F=..[:-,G,E]).
@@ -126,6 +128,7 @@ private_5_translateBodies(A,B,C,D,E,F):-private_5_translateMulti(A,B,C,D,E,F,lam
 private_5_translateBody(_,A,C,A,B,B):-A=public_2_body_is(_,_),!,private_5_yolo_UNSAFE_term_variables(A,C).
 private_5_translateBody(D,public_2_body_setvar(A,E),F,public_2_firstOrderCall(C,[public_2_term_constructor(A,[]),G]),H,I):-!,nb_getval(private_5_engine,B),private_5_engineSetVarName(B,C),private_5_translateTerm(D,E,F,G,H,I).
 private_5_translateBody(D,public_2_body_getvar(A,E),F,public_2_firstOrderCall(C,[public_2_term_constructor(A,[]),G]),H,I):-!,nb_getval(private_5_engine,B),private_5_engineGetVarName(B,C),private_5_translateTerm(D,E,F,G,H,I).
+private_5_translateBody(B,public_2_bodyUnary(A,C),D,public_2_bodyUnary(A,E),F,G):-!,private_5_translateBody(B,C,D,E,F,G).
 private_5_translateBody(B,public_2_bodyPair(C,A,D),E,public_2_bodyPair(F,A,G),H,I):-!,private_5_translateBodies(B,[C,D],E,[F,G],H,I).
 private_5_translateBody(A,public_2_higherOrderCall(B,C),D,public_2_firstOrderCall(I,E),F,G):-!,private_5_translateTerms(A,[B|C],D,E,F,G),length(C,H),private_5_yolo_UNSAFE_call_lambda_label(H,I).
 private_5_translateBody(A,public_2_firstOrderCall(G,B),C,I,D,E):-!,nb_getval(private_5_engine,F),private_5_translateTerms(A,B,C,H,D,E),private_5_translateCall(F,G,H,I).
@@ -139,6 +142,7 @@ private_5_translateClause(public_2_clauseclause(A,B,F),public_2_clauseclause(A,C
 private_5_bodyDirectlyCalls(public_2_body_is(_,_),A,A).
 private_5_bodyDirectlyCalls(public_2_body_setvar(_,_),A,A).
 private_5_bodyDirectlyCalls(public_2_body_getvar(_,_),A,A).
+private_5_bodyDirectlyCalls(public_2_bodyUnary(_,A),B,C):-private_5_bodyDirectlyCalls(A,B,C).
 private_5_bodyDirectlyCalls(public_2_bodyPair(A,_,C),B,E):-private_5_bodyDirectlyCalls(A,B,D),private_5_bodyDirectlyCalls(C,D,E).
 private_5_bodyDirectlyCalls(public_2_firstOrderCall(A,C),[public_0_pair(A,D)|B],B):-length(C,D).
 private_5_bodyDirectlyCalls(A,B):-private_5_bodyDirectlyCalls(A,B,[]).
@@ -181,6 +185,7 @@ private_4_typecheckBody(D,A,C,B):-public_0_onFailure(lambda0_19(A,B,C,D),lambda0
 private_4_rawTypecheckBody(_,A,public_2_body_is(B,D),E):-!,private_4_typecheckLhs(A,B,C),!,private_4_typecheckExp(C,D,E),!.
 private_4_rawTypecheckBody(A,B,public_2_body_setvar(C,D),E):-!,private_4_typecheckVarUse(A,B,C,D,E),!.
 private_4_rawTypecheckBody(A,B,public_2_body_getvar(C,D),E):-!,private_4_typecheckVarUse(A,B,C,D,E),!.
+private_4_rawTypecheckBody(A,B,public_2_bodyUnary(_,C),D):-!,private_4_typecheckBody(A,B,C,D),!.
 private_4_rawTypecheckBody(A,B,public_2_bodyPair(C,_,E),F):-!,private_4_typecheckBody(A,B,C,D),!,private_4_typecheckBody(A,D,E,F),!.
 private_4_rawTypecheckBody(A,B,public_2_higherOrderCall(C,E),G):-!,private_4_typeofTerm(A,B,C,public_2_relationType(F),D),!,private_4_typeofTerms(A,D,E,F,G),!.
 private_4_rawTypecheckBody(E,F,public_2_firstOrderCall(B,A),G):-length(A,D),C=_,public_0_onFailure(lambda0_21(B,C,D,E),lambda0_22(B,D)),private_4_typeofTerms(E,F,A,C,G),!.
@@ -215,6 +220,7 @@ private_3_translateVarUse(A,B,D,C,E):-private_3_renamedGlobalVariable(A,B,C),pri
 private_3_translateBody(_,public_2_body_is(A,B),public_2_body_is(A,B)).
 private_3_translateBody(A,public_2_body_setvar(B,C),public_2_body_setvar(D,E)):-private_3_translateVarUse(A,B,C,D,E).
 private_3_translateBody(A,public_2_body_getvar(B,C),public_2_body_getvar(D,E)):-private_3_translateVarUse(A,B,C,D,E).
+private_3_translateBody(B,public_2_bodyUnary(A,C),public_2_bodyUnary(A,D)):-private_3_translateBody(B,C,D).
 private_3_translateBody(B,public_2_bodyPair(C,A,E),public_2_bodyPair(D,A,F)):-private_3_translateBody(B,C,D),private_3_translateBody(B,E,F).
 private_3_translateBody(A,public_2_higherOrderCall(B,D),public_2_higherOrderCall(C,E)):-private_3_translateTerm(A,B,C),private_3_translateTerms(A,D,E).
 private_3_translateBody(B,public_2_firstOrderCall(C,A),public_2_firstOrderCall(E,F)):-length(A,D),private_3_renamedClause(B,C,D,E),private_3_translateTerms(B,A,F).
@@ -250,10 +256,12 @@ private_2_yolo_UNSAFE_translate_exp(A,public_2_binop(E,C,G)):-A=..[B,D,F],!,priv
 private_2_yolo_UNSAFE_translate_body_pair_op(A,public_2_and):-A= (','),!.
 private_2_yolo_UNSAFE_translate_body_pair_op(A,public_2_or):-A= (;),!.
 private_2_yolo_UNSAFE_translate_body_pair_op(A,public_2_implies):-A= (->),!.
+private_2_yolo_UNSAFE_translate_unary_body_op(A,public_2_not):-A= (\+),!.
 private_2_translateBody(B,A):-public_0_onFailure(lambda0_59(A,B),lambda0_60(B)).
 private_2_yolo_UNSAFE_translate_body(A,public_2_body_is(C,E)):-A= (B is D),!,private_2_yolo_UNSAFE_translate_exp_lhs(B,C),private_2_yolo_UNSAFE_translate_exp(D,E).
 private_2_yolo_UNSAFE_translate_body(A,public_2_body_setvar(B,D)):-A=setvar(B,C),!,atom(B),private_2_translateTerm(C,D).
 private_2_yolo_UNSAFE_translate_body(A,public_2_body_getvar(B,D)):-A=getvar(B,C),!,atom(B),private_2_translateTerm(C,D).
+private_2_yolo_UNSAFE_translate_body(A,public_2_bodyUnary(C,E)):-A=..[B,D],private_2_yolo_UNSAFE_translate_unary_body_op(B,C),!,private_2_translateBody(D,E).
 private_2_yolo_UNSAFE_translate_body(A,public_2_bodyPair(E,C,G)):-A=..[B,D,F],private_2_yolo_UNSAFE_translate_body_pair_op(B,C),!,private_2_translateBody(D,E),private_2_translateBody(F,G).
 private_2_yolo_UNSAFE_translate_body(A,public_2_higherOrderCall(C,E)):-A=..[call,B|D],!,private_2_translateTerm(B,C),private_2_translateTerms(D,E).
 private_2_yolo_UNSAFE_translate_body(A,public_2_firstOrderCall(B,D)):-A=..[B|C],!,private_2_translateTerms(C,D).
