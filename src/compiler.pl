@@ -301,7 +301,7 @@ private_1_yolo_UNSAFE_translate_mode(private_1_write_mode,A):-A=write,!.
 private_1_yolo_UNSAFE_open_file(B,A,private_1_stream(D)):-private_1_yolo_UNSAFE_translate_mode(A,C),open(B,C,D).
 private_1_yolo_UNSAFE_close_file(private_1_stream(A)):-close(A).
 private_1_withOpenStream(A,B,C):-private_1_yolo_UNSAFE_open_file(A,B,D), (call_lambda1(C,D),private_1_yolo_UNSAFE_close_file(D),!;private_1_yolo_UNSAFE_close_file(D),fail).
-private_1_yolo_UNSAFE_read_clause(private_1_stream(A),D,C):-read_clause(A,B,[]), (B==end_of_file->C=public_0_none;call_lambda2(D,B,E),C=public_0_some(E)).
+private_1_yolo_UNSAFE_read_clause(private_1_stream(A),D,C):-read_clause(A,B,[dotlists(true)]), (B==end_of_file->C=public_0_none;call_lambda2(D,B,E),C=public_0_some(E)).
 private_1_read_clauses_from_stream(B,C,D):-A=lambda1_71(A,B,C),call_lambda1(A,D).
 public_1_read_clauses_from_file(A,B,C):-private_1_withOpenStream(A,private_1_read_mode,lambda1_72(B,C)).
 private_1_yolo_UNSAFE_write_clause(A,private_1_stream(C)):-copy_term(A,B),numbervars(B,0,_,[singletons(true)]),write_term(C,B,[numbervars(true),quoted(true)]),format(C,'.~n',[]).

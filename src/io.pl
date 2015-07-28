@@ -26,7 +26,7 @@ withOpenStream(Filename, Mode, CallThis) :-
 
 clausedef(yolo_UNSAFE_read_clause, [A, B, C], [stream(A), relation([B, C]), option(C)]).
 yolo_UNSAFE_read_clause(stream(Wrapped), Translator, Translated) :-
-        read_clause(Wrapped, RawClause, []),
+        read_clause(Wrapped, RawClause, [dotlists(true)]),
         (RawClause == end_of_file ->
             (Translated = none);
             (call(Translator, RawClause, TranslatedClause),
