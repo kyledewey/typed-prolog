@@ -1,9 +1,9 @@
 module(module_handler, [handleModules/5], []).
 
 use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2,
-                         foldRight/4, appendDiffList/3, onFailure/2,
+                         foldRight/4, appendDiffList/3, onFailure/2, find/3,
                          yolo_UNSAFE_format_shim/2, duplicates/2],
-                        [pair, tup3, tup4]).
+                        [pair, tup3, tup4, option]).
 use_module('syntax.pl', [loadFile/2],
                         [op, exp, expLhs, term, body, type, defclause,
                          typeConstructor, defdata, clauseclause, defglobalvar,
@@ -85,6 +85,29 @@ extractConstructors(loadedModule(_, _, _, LoadedFile),
         % get the corresponding constructors
         constructorsInDataDefs(ImportedDataDefs, Constructors).
 
+% Makes sure that anything exported in the given file is actually defined
+% in the given file.
+clausedef(ensureExportsExist, [], [loadedFile]).
+ensureExportsExist(loadedFile(defmodule(_, ExportedClauses, ExportedConstructors),
+                              _,
+                              DefinedConstructors,
+                              DefinedClauses,
+                              _,
+                              _)) :-
+    forall(ExportedClauses,
+           lambda([pair(ClauseName, ClauseArity)],
+                  (find(DefinedClauses,
+                        lambda([defclause(ClauseName, _, Types)],
+                               length(Types, ClauseArity)),
+                        some(_)),
+                   !))),
+    forall(ExportedConstructors,
+           lambda([ConstructorName],
+                  (find(DefinedConstructors,
+                        lambda([defdata(ConstructorName, _, _)], true),
+                        some(_)),
+                   !))).
+        
 clausedef(directLoadModule, [], [atom, % absolute filename
                                  list(loadedModule), % already loaded modules
                                  list(atom), % in progress loading
@@ -94,6 +117,11 @@ directLoadModule(FileName, AlreadyLoaded, InProgress,
         loadFile(FileName, LoadedFile),
         LoadedFile = loadedFile(_, UsesModules, DataDefs, _, _, _),
 
+        % make sure everything exported actually exists
+        onFailure(
+                lambda([], ensureExportsExist(LoadedFile)),
+                lambda([], yolo_UNSAFE_format_shim('Something exported not defined in: ~w~n', [FileName]))),
+        
         % perform the actual loading
         foldLeft(UsesModules, pair(AlreadyLoaded, ProcessedUses),
                  lambda([pair(CurLoaded,
