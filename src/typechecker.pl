@@ -276,6 +276,12 @@ clausedef(markedUnsafe, [], [atom]).
 markedUnsafe(Name) :-
         atomContains(Name, 'yolo_UNSAFE_').
 
+clausedef(typecheckClauseWithErrorMessage, [], [state, clauseclause]).
+typecheckClauseWithErrorMessage(State, Clause) :-
+    onFailure(
+            lambda([], typecheckClause(State, Clause)),
+            lambda([], yolo_UNSAFE_format_shim('Type error at clause ~w~n', [Clause]))).
+
 clausedef(typecheckClause, [], [state, clauseclause]).
 typecheckClause(State, clauseclause(Name, FormalParams, Body)) :-
         length(FormalParams, Arity),
@@ -312,4 +318,4 @@ typecheckClauses(UserDataDefs, UserClauseDefs, UserDefGlobalVars, Clauses) :-
 
         % perform typechecking
         makeState(DataDefs, ClauseDefs, UserDefGlobalVars, State),
-        forall(Clauses, lambda([Clause], typecheckClause(State, Clause))).
+        forall(Clauses, lambda([Clause], typecheckClauseWithErrorMessage(State, Clause))).
