@@ -10,7 +10,8 @@ use_module('common.pl', [map/3, forall/2, setContains/2, onFailure/2,
 % BEGIN AST DEFINITION
 %
 % The whole int hackery works because variables will never be instantiated.
-datadef(op, [], [plus, minus, mul, div, op_min, op_max]).
+datadef(op, [], [plus, minus, mul, div, op_min, op_max,
+                 shift_left, shift_right, bitwise_and, bitwise_or]).
 datadef(exp, [], [exp_var(int), exp_num(int), binop(exp, op, exp)]).
 datadef(expLhs, [], [lhs_var(int), lhs_num(int)]).
 datadef(term, [], [term_var(int), term_num(int),
@@ -88,6 +89,10 @@ yolo_UNSAFE_translate_op(Op, mul) :- Op = '*', !.
 yolo_UNSAFE_translate_op(Op, div) :- Op = '/', !.
 yolo_UNSAFE_translate_op(Op, op_min) :- Op = min, !.
 yolo_UNSAFE_translate_op(Op, op_max) :- Op = max, !.
+yolo_UNSAFE_translate_op(Op, shift_left) :- Op = '<<', !.
+yolo_UNSAFE_translate_op(Op, shift_right) :- Op = '>>', !.
+yolo_UNSAFE_translate_op(Op, bitwise_and) :- Op = '/\\', !.
+yolo_UNSAFE_translate_op(Op, bitwise_or) :- Op = '\\/', !.
 
 clausedef(yolo_UNSAFE_translate_exp, [A], [A, exp]).
 yolo_UNSAFE_translate_exp(Var, exp_var(NewVar)) :-

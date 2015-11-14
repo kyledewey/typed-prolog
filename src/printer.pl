@@ -20,6 +20,10 @@ translateOp(mul, '*').
 translateOp(div, '/').
 translateOp(op_min, min).
 translateOp(op_max, max).
+translateOp(shift_left, '<<').
+translateOp(shift_right, '>>').
+translateOp(bitwise_and, '/\\').
+translateOp(bitwise_or, '\\/').
 
 clausedef(translateBodyUnaryOp, [], [bodyUnaryOp, atom]).
 translateBodyUnaryOp(not, '\\+').

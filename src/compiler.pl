@@ -102,6 +102,10 @@ private_6_translateOp(public_2_mul,*).
 private_6_translateOp(public_2_div,/).
 private_6_translateOp(public_2_op_min,min).
 private_6_translateOp(public_2_op_max,max).
+private_6_translateOp(public_2_shift_left,<<).
+private_6_translateOp(public_2_shift_right,>>).
+private_6_translateOp(public_2_bitwise_and,/\).
+private_6_translateOp(public_2_bitwise_or,\/).
 private_6_translateBodyUnaryOp(public_2_not,\+).
 private_6_translateBodyPairOp(public_2_and,',').
 private_6_translateBodyPairOp(public_2_or,;).
@@ -260,6 +264,10 @@ private_2_yolo_UNSAFE_translate_op(A,public_2_mul):-A= (*),!.
 private_2_yolo_UNSAFE_translate_op(A,public_2_div):-A= (/),!.
 private_2_yolo_UNSAFE_translate_op(A,public_2_op_min):-A=min,!.
 private_2_yolo_UNSAFE_translate_op(A,public_2_op_max):-A=max,!.
+private_2_yolo_UNSAFE_translate_op(A,public_2_shift_left):-A= (<<),!.
+private_2_yolo_UNSAFE_translate_op(A,public_2_shift_right):-A= (>>),!.
+private_2_yolo_UNSAFE_translate_op(A,public_2_bitwise_and):-A= (/\),!.
+private_2_yolo_UNSAFE_translate_op(A,public_2_bitwise_or):-A= (\/),!.
 private_2_yolo_UNSAFE_translate_exp(A,public_2_exp_var(B)):-var(A),!,A=B.
 private_2_yolo_UNSAFE_translate_exp(A,public_2_exp_num(B)):-number(A),!,A=B.
 private_2_yolo_UNSAFE_translate_exp(A,public_2_binop(E,C,G)):-A=..[B,D,F],!,private_2_yolo_UNSAFE_translate_op(B,C),private_2_yolo_UNSAFE_translate_exp(D,E),private_2_yolo_UNSAFE_translate_exp(F,G).
