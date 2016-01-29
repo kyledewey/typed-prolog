@@ -25,6 +25,7 @@ builtinClauseDefs(
          defclause(var, [A], [A]),
          defclause(nonvar, [A], [A]),
          defclause(atom, [A], [A]),
+         defclause(integer, [], [intType]),
          defclause(>, [], [intType, intType]),
          defclause(<, [], [intType, intType]),
          defclause(=<, [], [intType, intType]),
