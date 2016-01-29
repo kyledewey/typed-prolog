@@ -135,7 +135,7 @@ clausedef(translateBody, [A], [A, body]).
 translateBody(Input, Output) :-
         onFailure(
             lambda([], yolo_UNSAFE_translate_body(Input, Output)),
-            lambda([], yolo_UNSAFE_format_shim('Syntax error in body: ~w~n', [Input]))).
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in body: ~w~n~n', [Input]))).
 
 clausedef(yolo_UNSAFE_translate_body, [A], [A, body]).
 yolo_UNSAFE_translate_body(Input, body_is(NewExpLhs, NewExp)) :-
@@ -182,7 +182,7 @@ clausedef(translateTerm, [A], [A, term]).
 translateTerm(Input, Output) :-
         onFailure(
             lambda([], yolo_UNSAFE_translate_term(Input, Output)),
-            lambda([], yolo_UNSAFE_format_shim('Syntax error in term: ~w~n', [Input]))).
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in term: ~w~n~n', [Input]))).
 
 clausedef(yolo_UNSAFE_translate_term, [A], [A, term]).
 yolo_UNSAFE_translate_term(Var, term_var(NewVar)) :-
@@ -234,13 +234,13 @@ clausedef(translateType, [A, B], [list(A), B, type]).
 translateType(TypeVars, Input, Output) :-
         onFailure(
             lambda([], yolo_UNSAFE_translate_type(TypeVars, Input, Output)),
-            lambda([], yolo_UNSAFE_format_shim('Syntax error in type: ~w~n', [Input]))).
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in type: ~w~n~n', [Input]))).
 
 clausedef(translateClause, [A], [A, readclause]).
 translateClause(Clause, ReadClause) :-
         onFailure(
             lambda([], yolo_UNSAFE_translate_clause(Clause, ReadClause)),
-            lambda([], yolo_UNSAFE_format_shim('Syntax error in clause: ~w~n', [Clause]))).
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in clause: ~w~n~n', [Clause]))).
 
 clausedef(yolo_UNSAFE_translate_clause, [A], [A, readclause]).
 yolo_UNSAFE_translate_clause(

@@ -1,11 +1,11 @@
 :-use_module(library(clpfd)).
-call_lambda0(lambda0_76(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in clause: ~w~n',[A]).
+call_lambda0(lambda0_76(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in clause: ~w~n~n',[A]).
 call_lambda0(lambda0_75(B,A)):-private_2_yolo_UNSAFE_translate_clause(A,B).
-call_lambda0(lambda0_74(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in type: ~w~n',[A]).
+call_lambda0(lambda0_74(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in type: ~w~n~n',[A]).
 call_lambda0(lambda0_73(B,C,A)):-private_2_yolo_UNSAFE_translate_type(A,B,C).
-call_lambda0(lambda0_71(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in term: ~w~n',[A]).
+call_lambda0(lambda0_71(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in term: ~w~n~n',[A]).
 call_lambda0(lambda0_70(B,A)):-private_2_yolo_UNSAFE_translate_term(A,B).
-call_lambda0(lambda0_68(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in body: ~w~n',[A]).
+call_lambda0(lambda0_68(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in body: ~w~n~n',[A]).
 call_lambda0(lambda0_67(B,A)):-private_2_yolo_UNSAFE_translate_body(A,B).
 call_lambda0(lambda0_47(A)):-public_0_duplicates(A,B),public_0_yolo_UNSAFE_format_shim('Duplicate constructors in scope: ~w~n',[B]).
 call_lambda0(lambda0_46(A)):-is_set(A).
@@ -13,15 +13,15 @@ call_lambda0(lambda0_44(A)):-public_0_yolo_UNSAFE_format_shim('Something exporte
 call_lambda0(lambda0_43(A)):-private_3_ensureExportsExist(A).
 call_lambda0(lambda0_33(A)):-public_0_yolo_UNSAFE_format_shim('Could not read from possibly nonexistent file: ~w~n',[A]).
 call_lambda0(lambda0_32(A)):-access_file(A,read).
-call_lambda0(lambda0_29(A)):-public_0_yolo_UNSAFE_format_shim('Type error at clause ~w~n',[A]).
+call_lambda0(lambda0_29(A)):-public_0_yolo_UNSAFE_format_shim('Type error at clause ~w~n~n',[A]).
 call_lambda0(lambda0_28(B,A)):-private_4_typecheckClause(A,B).
 call_lambda0(lambda0_26(D,C,B,A)):-public_0_yolo_UNSAFE_format_shim('Type error at term ~w~n',[A]),public_0_onFailure(lambda0_24(B,C,A,D),lambda0_25(B)).
-call_lambda0(lambda0_25(A)):-public_0_yolo_UNSAFE_format_shim('\tFound: UNKNOWN~n\tExpected: ~w~n',[A]).
-call_lambda0(lambda0_24(E,A,C,B)):-private_4_rawTypeofTerm(A,B,C,D,_),public_0_yolo_UNSAFE_format_shim('\tFound: ~w~n\tExpected: ~w~n',[D,E]).
+call_lambda0(lambda0_25(A)):-public_0_yolo_UNSAFE_format_shim('\tFound: UNKNOWN~n\tExpected: ~w~n~n',[A]).
+call_lambda0(lambda0_24(E,A,C,B)):-private_4_rawTypeofTerm(A,B,C,D,_),public_0_yolo_UNSAFE_format_shim('\tFound: ~w~n\tExpected: ~w~n~n',[D,E]).
 call_lambda0(lambda0_23(B,D,E,C,A)):-private_4_rawTypeofTerm(A,B,C,D,E).
-call_lambda0(lambda0_22(A,B)):-public_0_yolo_UNSAFE_format_shim('Unknown clause: ~w~n',[public_0_pair(A,B)]).
+call_lambda0(lambda0_22(A,B)):-public_0_yolo_UNSAFE_format_shim('Unknown clause: ~w~n~n',[public_0_pair(A,B)]).
 call_lambda0(lambda0_21(B,D,C,A)):-private_4_expectedFormalParamTypes(A,B,C,D).
-call_lambda0(lambda0_20(A)):-public_0_yolo_UNSAFE_format_shim('Type error at body ~w~n',[A]).
+call_lambda0(lambda0_20(A)):-public_0_yolo_UNSAFE_format_shim('Type error at body ~w~n~n',[A]).
 call_lambda0(lambda0_19(B,D,C,A)):-private_4_rawTypecheckBody(A,B,C,D).
 call_lambda1(lambda1_85(A),B):-A\=B.
 call_lambda1(lambda1_84(A),B):-public_0_setContains(A,B).
