@@ -152,6 +152,9 @@ typecheckExp(TypeEnv, binop(E1, _, E2), NewTypeEnv) :-
         !,
         typecheckExp(TypeEnv, E1, TempTypeEnv), !,
         typecheckExp(TempTypeEnv, E2, NewTypeEnv).
+typecheckExp(TypeEnv, unaryop(_, E), NewTypeEnv) :-
+        !,
+        typecheckExp(TypeEnv, E, NewTypeEnv).
 
 clausedef(typecheckVarUse, [], [state,
                                 list(pair(int, type)), % input type environment,

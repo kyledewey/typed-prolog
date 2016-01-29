@@ -106,6 +106,8 @@ private_6_translateOp(public_2_shift_left,<<).
 private_6_translateOp(public_2_shift_right,>>).
 private_6_translateOp(public_2_bitwise_and,/\).
 private_6_translateOp(public_2_bitwise_or,\/).
+private_6_translateUnop(public_2_op_msb,msb).
+private_6_translateUnop(public_2_op_abs,abs).
 private_6_translateBodyUnaryOp(public_2_not,\+).
 private_6_translateBodyPairOp(public_2_and,',').
 private_6_translateBodyPairOp(public_2_or,;).
@@ -113,6 +115,7 @@ private_6_translateBodyPairOp(public_2_implies,->).
 private_6_yolo_UNSAFE_translate_exp(public_2_exp_var(A),B):-A=B.
 private_6_yolo_UNSAFE_translate_exp(public_2_exp_num(A),B):-A=B.
 private_6_yolo_UNSAFE_translate_exp(public_2_binop(B,A,C),D):-private_6_translateOp(A,E),private_6_yolo_UNSAFE_translate_exp(B,F),private_6_yolo_UNSAFE_translate_exp(C,G),D=..[E,F,G].
+private_6_yolo_UNSAFE_translate_exp(public_2_unaryop(A,B),C):-private_6_translateUnop(A,D),private_6_yolo_UNSAFE_translate_exp(B,E),C=..[D,E].
 private_6_yolo_UNSAFE_translate_exp_lhs(public_2_lhs_var(A),B):-A=B.
 private_6_yolo_UNSAFE_translate_exp_lhs(public_2_lhs_num(A),B):-A=B.
 private_6_translateTerms(A,B):-public_0_map(A,lambda2_0,B).
@@ -192,6 +195,7 @@ private_4_typecheckLhs(A,public_2_lhs_var(B),C):-!,private_4_envVariableType(A,B
 private_4_typecheckExp(A,public_2_exp_var(B),C):-!,private_4_envVariableType(A,B,public_2_intType,C).
 private_4_typecheckExp(A,public_2_exp_num(_),A):-!.
 private_4_typecheckExp(A,public_2_binop(B,_,D),E):-!,private_4_typecheckExp(A,B,C),!,private_4_typecheckExp(C,D,E).
+private_4_typecheckExp(A,public_2_unaryop(_,B),C):-!,private_4_typecheckExp(A,B,C).
 private_4_typecheckVarUse(A,D,B,E,G):-A=private_4_state(_,_,C),member(public_2_defglobalvar(B,_,F),C),private_4_typeofTerm(A,D,E,F,G).
 private_4_typecheckBody(D,A,C,B):-public_0_onFailure(lambda0_19(A,B,C,D),lambda0_20(C)).
 private_4_rawTypecheckBody(_,A,public_2_body_is(B,D),E):-!,private_4_typecheckLhs(A,B,C),!,private_4_typecheckExp(C,D,E),!.
@@ -268,9 +272,12 @@ private_2_yolo_UNSAFE_translate_op(A,public_2_shift_left):-A= (<<),!.
 private_2_yolo_UNSAFE_translate_op(A,public_2_shift_right):-A= (>>),!.
 private_2_yolo_UNSAFE_translate_op(A,public_2_bitwise_and):-A= (/\),!.
 private_2_yolo_UNSAFE_translate_op(A,public_2_bitwise_or):-A= (\/),!.
+private_2_yolo_UNSAFE_translate_unop(A,public_2_op_msb):-A=msb,!.
+private_2_yolo_UNSAFE_translate_unop(A,public_2_op_abs):-A=abs,!.
 private_2_yolo_UNSAFE_translate_exp(A,public_2_exp_var(B)):-var(A),!,A=B.
 private_2_yolo_UNSAFE_translate_exp(A,public_2_exp_num(B)):-number(A),!,A=B.
 private_2_yolo_UNSAFE_translate_exp(A,public_2_binop(E,C,G)):-A=..[B,D,F],!,private_2_yolo_UNSAFE_translate_op(B,C),private_2_yolo_UNSAFE_translate_exp(D,E),private_2_yolo_UNSAFE_translate_exp(F,G).
+private_2_yolo_UNSAFE_translate_exp(A,public_2_unaryop(C,E)):-A=..[B,D],!,private_2_yolo_UNSAFE_translate_unop(B,C),private_2_yolo_UNSAFE_translate_exp(D,E).
 private_2_yolo_UNSAFE_translate_body_pair_op(A,public_2_and):-A= (','),!.
 private_2_yolo_UNSAFE_translate_body_pair_op(A,public_2_or):-A= (;),!.
 private_2_yolo_UNSAFE_translate_body_pair_op(A,public_2_implies):-A= (->),!.
