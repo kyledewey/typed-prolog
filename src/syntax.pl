@@ -11,7 +11,8 @@ use_module('common.pl', [map/3, forall/2, setContains/2, onFailure/2,
 %
 % The whole int hackery works because variables will never be instantiated.
 datadef(op, [], [plus, minus, mul, div, op_min, op_max,
-                 shift_left, shift_right, bitwise_and, bitwise_or]).
+                 shift_left, shift_right, bitwise_and, bitwise_or,
+                 int_div, int_rem]).
 datadef(unop, [], [op_msb, op_abs]).
 datadef(exp, [], [exp_var(int), exp_num(int), binop(exp, op, exp), unaryop(unop, exp)]).
 datadef(expLhs, [], [lhs_var(int), lhs_num(int)]).
@@ -94,6 +95,8 @@ yolo_UNSAFE_translate_op(Op, shift_left) :- Op = '<<', !.
 yolo_UNSAFE_translate_op(Op, shift_right) :- Op = '>>', !.
 yolo_UNSAFE_translate_op(Op, bitwise_and) :- Op = '/\\', !.
 yolo_UNSAFE_translate_op(Op, bitwise_or) :- Op = '\\/', !.
+yolo_UNSAFE_translate_op(Op, int_div) :- Op = '//', !.
+yolo_UNSAFE_translate_op(Op, int_rem) :- Op = rem, !.
 
 clausedef(yolo_UNSAFE_translate_unop, [A], [A, unop]).
 yolo_UNSAFE_translate_unop(Op, op_msb) :- Op = msb, !.

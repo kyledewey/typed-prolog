@@ -24,6 +24,8 @@ translateOp(shift_left, '<<').
 translateOp(shift_right, '>>').
 translateOp(bitwise_and, '/\\').
 translateOp(bitwise_or, '\\/').
+translateOp(int_div, '//').
+translateOp(int_rem, 'rem').
 
 clausedef(translateUnop, [], [unop, atom]).
 translateUnop(op_msb, msb).
