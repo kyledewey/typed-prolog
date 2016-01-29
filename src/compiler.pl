@@ -1,16 +1,16 @@
 :-use_module(library(clpfd)).
-call_lambda0(lambda0_76(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in clause: ~w~n~n',[A]).
-call_lambda0(lambda0_75(B,A)):-private_2_yolo_UNSAFE_translate_clause(A,B).
-call_lambda0(lambda0_74(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in type: ~w~n~n',[A]).
-call_lambda0(lambda0_73(B,C,A)):-private_2_yolo_UNSAFE_translate_type(A,B,C).
-call_lambda0(lambda0_71(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in term: ~w~n~n',[A]).
-call_lambda0(lambda0_70(B,A)):-private_2_yolo_UNSAFE_translate_term(A,B).
-call_lambda0(lambda0_68(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in body: ~w~n~n',[A]).
-call_lambda0(lambda0_67(B,A)):-private_2_yolo_UNSAFE_translate_body(A,B).
-call_lambda0(lambda0_47(A)):-public_0_duplicates(A,B),public_0_yolo_UNSAFE_format_shim('Duplicate constructors in scope: ~w~n',[B]).
-call_lambda0(lambda0_46(A)):-is_set(A).
-call_lambda0(lambda0_44(A)):-public_0_yolo_UNSAFE_format_shim('Something exported not defined in: ~w~n',[A]).
-call_lambda0(lambda0_43(A)):-private_3_ensureExportsExist(A).
+call_lambda0(lambda0_80(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in clause: ~w~n~n',[A]).
+call_lambda0(lambda0_79(B,A)):-private_2_yolo_UNSAFE_translate_clause(A,B).
+call_lambda0(lambda0_78(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in type: ~w~n~n',[A]).
+call_lambda0(lambda0_77(B,C,A)):-private_2_yolo_UNSAFE_translate_type(A,B,C).
+call_lambda0(lambda0_75(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in term: ~w~n~n',[A]).
+call_lambda0(lambda0_74(B,A)):-private_2_yolo_UNSAFE_translate_term(A,B).
+call_lambda0(lambda0_72(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in body: ~w~n~n',[A]).
+call_lambda0(lambda0_71(B,A)):-private_2_yolo_UNSAFE_translate_body(A,B).
+call_lambda0(lambda0_51(A)):-public_0_duplicates(A,B),public_0_yolo_UNSAFE_format_shim('Duplicate constructors in scope: ~w~n',[B]).
+call_lambda0(lambda0_50(A)):-is_set(A).
+call_lambda0(lambda0_48(C,B,A)):-public_0_yolo_UNSAFE_format_shim('Something exported not defined in: ~w~n',[A]),public_0_yolo_UNSAFE_format_shim('Nonexistent clauses are: ~w~n',[B]),public_0_yolo_UNSAFE_format_shim('Nonexistent constructors are: ~w~n',[C]).
+call_lambda0(lambda0_47(B,A)):-A=[],B=[].
 call_lambda0(lambda0_33(A)):-public_0_yolo_UNSAFE_format_shim('Could not read from possibly nonexistent file: ~w~n',[A]).
 call_lambda0(lambda0_32(A)):-access_file(A,read).
 call_lambda0(lambda0_29(A)):-public_0_yolo_UNSAFE_format_shim('Type error at clause ~w~n~n',[A]).
@@ -23,17 +23,21 @@ call_lambda0(lambda0_22(A,B)):-public_0_yolo_UNSAFE_format_shim('Unknown clause:
 call_lambda0(lambda0_21(B,D,C,A)):-private_4_expectedFormalParamTypes(A,B,C,D).
 call_lambda0(lambda0_20(A)):-public_0_yolo_UNSAFE_format_shim('Type error at body ~w~n~n',[A]).
 call_lambda0(lambda0_19(B,D,C,A)):-private_4_rawTypecheckBody(A,B,C,D).
-call_lambda1(lambda1_85(A),B):-A\=B.
-call_lambda1(lambda1_84(A),B):-public_0_setContains(A,B).
-call_lambda1(lambda1_82(A),B):-public_0_forall(A,lambda1_81(B)).
-call_lambda1(lambda1_81(B),A):-private_1_yolo_UNSAFE_write_clause(A,B).
-call_lambda1(lambda1_80(B,C),A):-private_1_read_clauses_from_stream(A,B,C).
-call_lambda1(lambda1_79(F,A,B),D):-private_1_yolo_UNSAFE_read_clause(A,B,C), (C=public_0_some(E)->D=[E|G],call_lambda1(F,G);D=[]).
-call_lambda1(lambda1_66,A):-atom(A).
-call_lambda1(lambda1_65,A):-var(A).
-call_lambda1(lambda1_42(A),B):-public_0_find(A,lambda1_41(B),public_0_some(_)),!.
+call_lambda1(lambda1_89(A),B):-A\=B.
+call_lambda1(lambda1_88(A),B):-public_0_setContains(A,B).
+call_lambda1(lambda1_86(A),B):-public_0_forall(A,lambda1_85(B)).
+call_lambda1(lambda1_85(B),A):-private_1_yolo_UNSAFE_write_clause(A,B).
+call_lambda1(lambda1_84(B,C),A):-private_1_read_clauses_from_stream(A,B,C).
+call_lambda1(lambda1_83(F,A,B),D):-private_1_yolo_UNSAFE_read_clause(A,B,C), (C=public_0_some(E)->D=[E|G],call_lambda1(F,G);D=[]).
+call_lambda1(lambda1_70,A):-atom(A).
+call_lambda1(lambda1_69,A):-var(A).
+call_lambda1(lambda1_46(A),B):-public_0_find(A,lambda1_45(B),public_0_some(_)),!.
+call_lambda1(lambda1_45(A),public_2_defdata(A,_,_)).
+call_lambda1(lambda1_44(A),public_0_pair(B,C)):-public_0_find(A,lambda1_43(B,C),public_0_some(_)),!.
+call_lambda1(lambda1_43(A,C),public_2_defclause(A,_,B)):-length(B,C).
+call_lambda1(lambda1_42(A),B):-public_0_find(A,lambda1_41(B),public_0_some(_)),!->fail;true.
 call_lambda1(lambda1_41(A),public_2_defdata(A,_,_)).
-call_lambda1(lambda1_40(A),public_0_pair(B,C)):-public_0_find(A,lambda1_39(B,C),public_0_some(_)),!.
+call_lambda1(lambda1_40(A),public_0_pair(B,C)):-public_0_find(A,lambda1_39(B,C),public_0_some(_)),!->fail;true.
 call_lambda1(lambda1_39(A,C),public_2_defclause(A,_,B)):-length(B,C).
 call_lambda1(lambda1_37(B),A):-member(A,B).
 call_lambda1(lambda1_31(A),B):-private_4_typecheckClauseWithErrorMessage(A,B).
@@ -42,27 +46,27 @@ call_lambda1(lambda1_9,public_0_pair(_,A)):-public_0_find(A,lambda1_8,public_0_s
 call_lambda1(lambda1_8,A):-private_5_clpClause(A).
 call_lambda1(lambda1_6(B),public_0_pair(A,_)):-private_5_isCallLambda(A),public_0_notMember(A,B).
 call_lambda1(lambda1_4(A),B):-public_0_setContains(A,B).
-call_lambda2(lambda2_91,public_0_pair(A,_),A).
-call_lambda2(lambda2_89(A),public_0_pair(_,B),public_0_pair(_,C)):-call_lambda2(A,B,C).
-call_lambda2(lambda2_88(B),A,public_0_pair(A,C)):-call_lambda2(B,A,C).
-call_lambda2(lambda2_78,A,B):-private_2_translateClause(A,B).
-call_lambda2(lambda2_77(C),A,public_2_typeConstructor(B,E)):-A=..[B|D],private_2_translateTypes(C,D,E).
-call_lambda2(lambda2_72(A),B,C):-private_2_translateType(A,B,C).
-call_lambda2(lambda2_69,A,B):-private_2_translateTerm(A,B).
-call_lambda2(lambda2_64,A/B,public_0_pair(A,B)):-atom(A),number(B).
-call_lambda2(lambda2_62(B),public_2_clauseclause(C,A,G),public_2_clauseclause(E,F,H)):-length(A,D),private_3_renamedClause(B,C,D,E),private_3_translateTerms(B,A,F),private_3_translateBody(B,G,H).
-call_lambda2(lambda2_61(B),public_2_defglobalvar(C,A,E),public_2_defglobalvar(D,A,F)):-private_3_renamedGlobalVariable(B,C,D),private_3_translateType(B,E,F).
-call_lambda2(lambda2_60(C),public_2_defclause(D,A,B),public_2_defclause(F,A,G)):-length(B,E),private_3_renamedClause(C,D,E,F),private_3_translateTypes(C,B,G).
-call_lambda2(lambda2_59(A),B,C):-private_3_translateDataDef(A,B,C).
-call_lambda2(lambda2_58(A),public_2_typeConstructor(B,D),public_2_typeConstructor(C,E)):-private_3_renamedConstructor(A,B,C),private_3_translateTypes(A,D,E).
-call_lambda2(lambda2_57(A),B,C):-private_3_translateType(A,B,C).
-call_lambda2(lambda2_56(A),B,C):-private_3_translateTerm(A,B,C).
-call_lambda2(lambda2_55(B),public_2_defglobalvar(A,_,_),public_0_pair(A,C)):-private_3_yolo_UNSAFE_mangled_name(private_3_mod_private,B,A,C).
-call_lambda2(lambda2_53(C,B),public_2_typeConstructor(A,_),public_0_pair(A,D)):-private_3_yolo_UNSAFE_mangled_name(B,C,A,D).
-call_lambda2(lambda2_52(F,D),public_2_defclause(A,_,B),public_0_pair(public_0_pair(A,C),G)):-length(B,C), (member(public_0_pair(A,C),D)->E=private_3_mod_public;E=private_3_mod_private),private_3_yolo_UNSAFE_mangled_name(E,F,A,G).
-call_lambda2(lambda2_50(B),A,public_0_pair(A,C)):-private_3_yolo_UNSAFE_mangled_name(private_3_mod_public,B,A,C).
-call_lambda2(lambda2_49(B),A,public_0_pair(A,C)):-private_3_yolo_UNSAFE_mangled_name(private_3_mod_public,B,A,C).
-call_lambda2(lambda2_48(B),A,public_0_pair(A,D)):-A=public_0_pair(C,_),private_3_yolo_UNSAFE_mangled_name(private_3_mod_public,B,C,D).
+call_lambda2(lambda2_95,public_0_pair(A,_),A).
+call_lambda2(lambda2_93(A),public_0_pair(_,B),public_0_pair(_,C)):-call_lambda2(A,B,C).
+call_lambda2(lambda2_92(B),A,public_0_pair(A,C)):-call_lambda2(B,A,C).
+call_lambda2(lambda2_82,A,B):-private_2_translateClause(A,B).
+call_lambda2(lambda2_81(C),A,public_2_typeConstructor(B,E)):-A=..[B|D],private_2_translateTypes(C,D,E).
+call_lambda2(lambda2_76(A),B,C):-private_2_translateType(A,B,C).
+call_lambda2(lambda2_73,A,B):-private_2_translateTerm(A,B).
+call_lambda2(lambda2_68,A/B,public_0_pair(A,B)):-atom(A),number(B).
+call_lambda2(lambda2_66(B),public_2_clauseclause(C,A,G),public_2_clauseclause(E,F,H)):-length(A,D),private_3_renamedClause(B,C,D,E),private_3_translateTerms(B,A,F),private_3_translateBody(B,G,H).
+call_lambda2(lambda2_65(B),public_2_defglobalvar(C,A,E),public_2_defglobalvar(D,A,F)):-private_3_renamedGlobalVariable(B,C,D),private_3_translateType(B,E,F).
+call_lambda2(lambda2_64(C),public_2_defclause(D,A,B),public_2_defclause(F,A,G)):-length(B,E),private_3_renamedClause(C,D,E,F),private_3_translateTypes(C,B,G).
+call_lambda2(lambda2_63(A),B,C):-private_3_translateDataDef(A,B,C).
+call_lambda2(lambda2_62(A),public_2_typeConstructor(B,D),public_2_typeConstructor(C,E)):-private_3_renamedConstructor(A,B,C),private_3_translateTypes(A,D,E).
+call_lambda2(lambda2_61(A),B,C):-private_3_translateType(A,B,C).
+call_lambda2(lambda2_60(A),B,C):-private_3_translateTerm(A,B,C).
+call_lambda2(lambda2_59(B),public_2_defglobalvar(A,_,_),public_0_pair(A,C)):-private_3_yolo_UNSAFE_mangled_name(private_3_mod_private,B,A,C).
+call_lambda2(lambda2_57(C,B),public_2_typeConstructor(A,_),public_0_pair(A,D)):-private_3_yolo_UNSAFE_mangled_name(B,C,A,D).
+call_lambda2(lambda2_56(F,D),public_2_defclause(A,_,B),public_0_pair(public_0_pair(A,C),G)):-length(B,C), (member(public_0_pair(A,C),D)->E=private_3_mod_public;E=private_3_mod_private),private_3_yolo_UNSAFE_mangled_name(E,F,A,G).
+call_lambda2(lambda2_54(B),A,public_0_pair(A,C)):-private_3_yolo_UNSAFE_mangled_name(private_3_mod_public,B,A,C).
+call_lambda2(lambda2_53(B),A,public_0_pair(A,C)):-private_3_yolo_UNSAFE_mangled_name(private_3_mod_public,B,A,C).
+call_lambda2(lambda2_52(B),A,public_0_pair(A,D)):-A=public_0_pair(C,_),private_3_yolo_UNSAFE_mangled_name(private_3_mod_public,B,C,D).
 call_lambda2(lambda2_38(C),B,A):-A=public_2_defdata(B,_,_),member(A,C).
 call_lambda2(lambda2_36(C),private_3_moduleUse(A,_,D),E):-B=private_3_loadedModule(_,A,_,_),member(B,C),private_3_extractConstructors(B,D,E).
 call_lambda2(lambda2_35,public_2_defdata(_,_,A),B):-public_0_map(A,lambda2_34,B).
@@ -78,15 +82,15 @@ call_lambda2(lambda2_7,public_2_clauseclause(A,B,D),public_0_pair(public_0_pair(
 call_lambda2(lambda2_5,A,public_2_term_var(A)).
 call_lambda2(lambda2_1,A,B):-private_6_yolo_UNSAFE_translate_clause(A,B).
 call_lambda2(lambda2_0,A,B):-private_6_yolo_UNSAFE_translate_term(A,B).
-call_lambda3(lambda3_92,public_0_pair(A,C),B,public_0_pair(E,D)):-public_0_setContains(A,B)-> (public_0_setContains(C,B)->D=C;D=[B|C]),E=A;E=[B|A],D=C.
-call_lambda3(lambda3_90(B),A,C,D):-private_0_insertItem(A,B,C,D).
-call_lambda3(lambda3_87(A),C,B,D):-public_0_setContains(A,B)->C=D;D=[B|C].
-call_lambda3(lambda3_86,A,B,C):-public_0_setContains(A,B)->A=C;C=[B|A].
-call_lambda3(lambda3_83(A),B,D,E):-call_lambda2(A,B,C),append(C,D,E).
-call_lambda3(lambda3_63(A),public_0_tup4(C,E,G,I),B,public_0_tup4(D,F,H,J)):-private_3_translateModule(A,B,C,D,E,F,G,H,I,J).
-call_lambda3(lambda3_54(E,C),public_2_defdata(A,_,G),public_0_pair(B,I),public_0_pair([public_0_pair(A,F)|B],J)):- (member(A,C)->D=private_3_mod_public;D=private_3_mod_private),private_3_yolo_UNSAFE_mangled_name(D,E,A,F),public_0_map(G,lambda2_53(E,D),H),append(H,I,J).
-call_lambda3(lambda3_51(K),private_3_moduleUse(B,A,F),public_0_tup3(D,H,N),public_0_tup3(E,I,O)):-public_0_map(A,lambda2_48(B),C),append(C,D,E),public_0_map(F,lambda2_49(B),G),append(G,H,I),J=private_3_loadedModule(_,B,_,_),member(J,K),private_3_extractConstructors(J,F,L),public_0_map(L,lambda2_50(B),M),append(M,N,O).
-call_lambda3(lambda3_45(H,E),public_0_pair(G,[private_3_moduleUse(J,A,B)|C]),public_2_def_use_module(D,A,B),public_0_pair(I,C)):-private_3_yolo_UNSAFE_absolute_file_name(D,E,F),private_3_loadModule(F,G,H,I),member(private_3_loadedModule(F,J,_,_),I).
+call_lambda3(lambda3_96,public_0_pair(A,C),B,public_0_pair(E,D)):-public_0_setContains(A,B)-> (public_0_setContains(C,B)->D=C;D=[B|C]),E=A;E=[B|A],D=C.
+call_lambda3(lambda3_94(B),A,C,D):-private_0_insertItem(A,B,C,D).
+call_lambda3(lambda3_91(A),C,B,D):-public_0_setContains(A,B)->C=D;D=[B|C].
+call_lambda3(lambda3_90,A,B,C):-public_0_setContains(A,B)->A=C;C=[B|A].
+call_lambda3(lambda3_87(A),B,D,E):-call_lambda2(A,B,C),append(C,D,E).
+call_lambda3(lambda3_67(A),public_0_tup4(C,E,G,I),B,public_0_tup4(D,F,H,J)):-private_3_translateModule(A,B,C,D,E,F,G,H,I,J).
+call_lambda3(lambda3_58(E,C),public_2_defdata(A,_,G),public_0_pair(B,I),public_0_pair([public_0_pair(A,F)|B],J)):- (member(A,C)->D=private_3_mod_public;D=private_3_mod_private),private_3_yolo_UNSAFE_mangled_name(D,E,A,F),public_0_map(G,lambda2_57(E,D),H),append(H,I,J).
+call_lambda3(lambda3_55(K),private_3_moduleUse(B,A,F),public_0_tup3(D,H,N),public_0_tup3(E,I,O)):-public_0_map(A,lambda2_52(B),C),append(C,D,E),public_0_map(F,lambda2_53(B),G),append(G,H,I),J=private_3_loadedModule(_,B,_,_),member(J,K),private_3_extractConstructors(J,F,L),public_0_map(L,lambda2_54(B),M),append(M,N,O).
+call_lambda3(lambda3_49(H,E),public_0_pair(G,[private_3_moduleUse(J,A,B)|C]),public_2_def_use_module(D,A,B),public_0_pair(I,C)):-private_3_yolo_UNSAFE_absolute_file_name(D,E,F),private_3_loadModule(F,G,H,I),member(private_3_loadedModule(F,J,_,_),I).
 call_lambda3(lambda3_30,A,public_2_typevar(A),B):-B is A.
 call_lambda3(lambda3_27(A),B,public_0_pair(C,D),E):-private_4_typeofTerm(A,B,C,D,E).
 call_lambda3(lambda3_11,public_0_pair([C|A],D),B,public_0_pair(A,E)):-private_5_translateClause(B,C,D,E).
@@ -224,8 +228,9 @@ private_3_yolo_UNSAFE_absolute_file_name(A,C,B):-absolute_file_name(A,B,[relativ
 private_3_constructorsInDataDefs(A,B):-public_0_flatMap(A,lambda2_35,B).
 private_3_allImportedConstructors(B,A,C):-public_0_flatMap(A,lambda2_36(B),C).
 private_3_extractConstructors(private_3_loadedModule(_,_,_,A),B,F):-A=public_2_loadedFile(public_2_defmodule(_,_,C),_,D,_,_,_),public_0_forall(B,lambda1_37(C)),public_0_map(B,lambda2_38(D),E),private_3_constructorsInDataDefs(E,F).
-private_3_ensureExportsExist(public_2_loadedFile(public_2_defmodule(_,A,C),_,D,B,_,_)):-public_0_forall(A,lambda1_40(B)),public_0_forall(C,lambda1_42(D)).
-private_3_directLoadModule(A,D,F,[private_3_loadedModule(A,L,E,B)|G]):-public_2_loadFile(A,B),B=public_2_loadedFile(_,C,H,_,_,_),public_0_onFailure(lambda0_43(B),lambda0_44(A)),public_0_foldLeft(C,public_0_pair(D,E),lambda3_45(F,A),public_0_pair(G,[])),private_3_allImportedConstructors(G,E,I),private_3_constructorsInDataDefs(H,J),append(I,J,K),public_0_onFailure(lambda0_46(K),lambda0_47(K)),private_3_freshModuleId(L).
+private_3_nonexistentExports(public_2_loadedFile(public_2_defmodule(_,A,D),_,E,B,_,_),C,F):-public_0_filter(A,lambda1_40(B),C),public_0_filter(D,lambda1_42(E),F).
+private_3_ensureExportsExist(public_2_loadedFile(public_2_defmodule(_,A,C),_,D,B,_,_)):-public_0_forall(A,lambda1_44(B)),public_0_forall(C,lambda1_46(D)).
+private_3_directLoadModule(A,F,H,[private_3_loadedModule(A,N,G,B)|I]):-public_2_loadFile(A,B),B=public_2_loadedFile(_,E,J,_,_,_),private_3_nonexistentExports(B,D,C),public_0_onFailure(lambda0_47(C,D),lambda0_48(C,D,A)),public_0_foldLeft(E,public_0_pair(F,G),lambda3_49(H,A),public_0_pair(I,[])),private_3_allImportedConstructors(I,G,K),private_3_constructorsInDataDefs(J,L),append(K,L,M),public_0_onFailure(lambda0_50(M),lambda0_51(M)),private_3_freshModuleId(N).
 private_3_renamedClause(private_3_renaming(D,_,_,_),A,B,C):-member(public_0_pair(public_0_pair(A,B),C),D),!.
 private_3_renamedClause(_,A,_,A).
 private_3_renamedType(private_3_renaming(_,C,_,_),A,B):-member(public_0_pair(A,B),C),!.
@@ -234,7 +239,7 @@ private_3_renamedConstructor(private_3_renaming(_,_,C,_),A,B):-member(public_0_p
 private_3_renamedConstructor(_,A,A).
 private_3_renamedGlobalVariable(private_3_renaming(_,_,_,C),A,B):-member(public_0_pair(A,B),C),!.
 private_3_renamedGlobalVariable(_,A,A).
-private_3_makeRenaming(C,private_3_loadedModule(_,E,B,A),private_3_renaming(M,P,S,J)):-A=public_2_loadedFile(public_2_defmodule(_,F,H),_,G,D,I,_),public_0_foldRight(B,public_0_tup3([],[],[]),lambda3_51(C),public_0_tup3(L,O,R)),public_0_map(D,lambda2_52(E,F),K),public_0_foldRight(G,public_0_pair([],[]),lambda3_54(E,H),public_0_pair(N,Q)),public_0_map(I,lambda2_55(E),J),append(K,L,M),append(N,O,P),append(Q,R,S).
+private_3_makeRenaming(C,private_3_loadedModule(_,E,B,A),private_3_renaming(M,P,S,J)):-A=public_2_loadedFile(public_2_defmodule(_,F,H),_,G,D,I,_),public_0_foldRight(B,public_0_tup3([],[],[]),lambda3_55(C),public_0_tup3(L,O,R)),public_0_map(D,lambda2_56(E,F),K),public_0_foldRight(G,public_0_pair([],[]),lambda3_58(E,H),public_0_pair(N,Q)),public_0_map(I,lambda2_59(E),J),append(K,L,M),append(N,O,P),append(Q,R,S).
 private_3_loadModule(A,C,B,D):-public_0_notMember(A,B), (member(private_3_loadedModule(A,_,_,_),C)->D=C;private_3_directLoadModule(A,C,[A|B],D)).
 private_3_translateVarUse(A,B,D,C,E):-private_3_renamedGlobalVariable(A,B,C),private_3_translateTerm(A,D,E).
 private_3_translateBody(_,public_2_body_is(A,B),public_2_body_is(A,B)).
@@ -244,24 +249,24 @@ private_3_translateBody(B,public_2_bodyUnary(A,C),public_2_bodyUnary(A,D)):-priv
 private_3_translateBody(B,public_2_bodyPair(C,A,E),public_2_bodyPair(D,A,F)):-private_3_translateBody(B,C,D),private_3_translateBody(B,E,F).
 private_3_translateBody(A,public_2_higherOrderCall(B,D),public_2_higherOrderCall(C,E)):-private_3_translateTerm(A,B,C),private_3_translateTerms(A,D,E).
 private_3_translateBody(B,public_2_firstOrderCall(C,A),public_2_firstOrderCall(E,F)):-length(A,D),private_3_renamedClause(B,C,D,E),private_3_translateTerms(B,A,F).
-private_3_translateTerms(B,A,C):-public_0_map(A,lambda2_56(B),C).
+private_3_translateTerms(B,A,C):-public_0_map(A,lambda2_60(B),C).
 private_3_translateTerm(_,public_2_term_var(A),public_2_term_var(A)).
 private_3_translateTerm(_,public_2_term_num(A),public_2_term_num(A)).
 private_3_translateTerm(A,public_2_term_lambda(B,D),public_2_term_lambda(C,E)):-private_3_translateTerms(A,B,C),private_3_translateBody(A,D,E).
 private_3_translateTerm(A,public_2_term_constructor(B,D),public_2_term_constructor(C,E)):-private_3_renamedConstructor(A,B,C),private_3_translateTerms(A,D,E).
-private_3_translateTypes(B,A,C):-public_0_map(A,lambda2_57(B),C).
+private_3_translateTypes(B,A,C):-public_0_map(A,lambda2_61(B),C).
 private_3_translateType(_,A,B):-var(A),!,A=B.
 private_3_translateType(_,public_2_intType,public_2_intType):-!.
 private_3_translateType(_,public_2_atomType,public_2_atomType):-!.
 private_3_translateType(A,public_2_relationType(B),public_2_relationType(C)):-!,private_3_translateTypes(A,B,C).
 private_3_translateType(A,public_2_constructorType(B,D),public_2_constructorType(C,E)):-!,private_3_renamedType(A,B,C),private_3_translateTypes(A,D,E).
-private_3_translateDataDef(B,public_2_defdata(C,A,E),public_2_defdata(D,A,F)):-private_3_renamedType(B,C,D),public_0_map(E,lambda2_58(B),F).
-private_3_translateLoadedFile(B,public_2_loadedFile(_,_,A,F,J,N),D,E,H,I,L,M,P,Q):-public_0_map(A,lambda2_59(B),C),public_0_appendDiffList(C,D,E),public_0_map(F,lambda2_60(B),G),public_0_appendDiffList(G,H,I),public_0_map(J,lambda2_61(B),K),public_0_appendDiffList(K,L,M),public_0_map(N,lambda2_62(B),O),public_0_appendDiffList(O,P,Q).
+private_3_translateDataDef(B,public_2_defdata(C,A,E),public_2_defdata(D,A,F)):-private_3_renamedType(B,C,D),public_0_map(E,lambda2_62(B),F).
+private_3_translateLoadedFile(B,public_2_loadedFile(_,_,A,F,J,N),D,E,H,I,L,M,P,Q):-public_0_map(A,lambda2_63(B),C),public_0_appendDiffList(C,D,E),public_0_map(F,lambda2_64(B),G),public_0_appendDiffList(G,H,I),public_0_map(J,lambda2_65(B),K),public_0_appendDiffList(K,L,M),public_0_map(N,lambda2_66(B),O),public_0_appendDiffList(O,P,Q).
 private_3_translateModule(B,A,E,F,G,H,I,J,K,L):-A=private_3_loadedModule(_,_,_,D),private_3_makeRenaming(B,A,C),private_3_translateLoadedFile(C,D,E,F,G,H,I,J,K,L),!.
-public_3_handleModules(A,D,E,F,G):-nb_setval(private_3_counter,0),private_3_yolo_UNSAFE_absolute_file_name(A,./,B),private_3_directLoadModule(B,[],[B],C),!,public_0_foldLeft(C,public_0_tup4(D,E,F,G),lambda3_63(C),public_0_tup4([],[],[],[])).
-private_2_yolo_UNSAFE_translate_pairs(A,B):-public_0_map(A,lambda2_64,B).
-private_2_areTypeVars(A):-public_0_forall(A,lambda1_65),is_set(A).
-private_2_allAtoms(A):-public_0_forall(A,lambda1_66).
+public_3_handleModules(A,D,E,F,G):-nb_setval(private_3_counter,0),private_3_yolo_UNSAFE_absolute_file_name(A,./,B),private_3_directLoadModule(B,[],[B],C),!,public_0_foldLeft(C,public_0_tup4(D,E,F,G),lambda3_67(C),public_0_tup4([],[],[],[])).
+private_2_yolo_UNSAFE_translate_pairs(A,B):-public_0_map(A,lambda2_68,B).
+private_2_areTypeVars(A):-public_0_forall(A,lambda1_69),is_set(A).
+private_2_allAtoms(A):-public_0_forall(A,lambda1_70).
 private_2_yolo_UNSAFE_translate_exp_lhs(A,public_2_lhs_var(B)):-var(A),!,A=B.
 private_2_yolo_UNSAFE_translate_exp_lhs(A,public_2_lhs_num(B)):-number(A),!,A=B.
 private_2_yolo_UNSAFE_translate_op(A,public_2_plus):-A= (+),!.
@@ -286,7 +291,7 @@ private_2_yolo_UNSAFE_translate_body_pair_op(A,public_2_and):-A= (','),!.
 private_2_yolo_UNSAFE_translate_body_pair_op(A,public_2_or):-A= (;),!.
 private_2_yolo_UNSAFE_translate_body_pair_op(A,public_2_implies):-A= (->),!.
 private_2_yolo_UNSAFE_translate_unary_body_op(A,public_2_not):-A= (\+),!.
-private_2_translateBody(B,A):-public_0_onFailure(lambda0_67(A,B),lambda0_68(B)).
+private_2_translateBody(B,A):-public_0_onFailure(lambda0_71(A,B),lambda0_72(B)).
 private_2_yolo_UNSAFE_translate_body(A,public_2_body_is(C,E)):-A= (B is D),!,private_2_yolo_UNSAFE_translate_exp_lhs(B,C),private_2_yolo_UNSAFE_translate_exp(D,E).
 private_2_yolo_UNSAFE_translate_body(A,public_2_body_setvar(B,D)):-A=setvar(B,C),!,atom(B),private_2_translateTerm(C,D).
 private_2_yolo_UNSAFE_translate_body(A,public_2_body_getvar(B,D)):-A=getvar(B,C),!,atom(B),private_2_translateTerm(C,D).
@@ -294,25 +299,25 @@ private_2_yolo_UNSAFE_translate_body(A,public_2_bodyUnary(C,E)):-A=..[B,D],priva
 private_2_yolo_UNSAFE_translate_body(A,public_2_bodyPair(E,C,G)):-A=..[B,D,F],private_2_yolo_UNSAFE_translate_body_pair_op(B,C),!,private_2_translateBody(D,E),private_2_translateBody(F,G).
 private_2_yolo_UNSAFE_translate_body(A,public_2_higherOrderCall(C,E)):-A=..[call,B|D],!,private_2_translateTerm(B,C),private_2_translateTerms(D,E).
 private_2_yolo_UNSAFE_translate_body(A,public_2_firstOrderCall(B,D)):-A=..[B|C],!,private_2_translateTerms(C,D).
-private_2_translateTerms(A,B):-public_0_map(A,lambda2_69,B).
-private_2_translateTerm(B,A):-public_0_onFailure(lambda0_70(A,B),lambda0_71(B)).
+private_2_translateTerms(A,B):-public_0_map(A,lambda2_73,B).
+private_2_translateTerm(B,A):-public_0_onFailure(lambda0_74(A,B),lambda0_75(B)).
 private_2_yolo_UNSAFE_translate_term(A,public_2_term_var(B)):-var(A),!,A=B.
 private_2_yolo_UNSAFE_translate_term(A,public_2_term_num(B)):-number(A),!,A=B.
 private_2_yolo_UNSAFE_translate_term(A,public_2_term_lambda(C,E)):-A=..[lambda,B,D],!,private_2_translateTerms(B,C),private_2_translateBody(D,E).
 private_2_yolo_UNSAFE_translate_term(A,public_2_term_constructor(B,D)):-A=..[B|C],private_2_translateTerms(C,D).
 private_2_yolo_UNSAFE_normalize_clause(A,A):-A= (_:-_),!.
 private_2_yolo_UNSAFE_normalize_clause(B,A):-A= (B:-true).
-private_2_translateTypes(B,A,C):-public_0_map(A,lambda2_72(B),C).
+private_2_translateTypes(B,A,C):-public_0_map(A,lambda2_76(B),C).
 private_2_yolo_UNSAFE_translate_type(B,A,C):-var(A),!,public_0_setContains(B,A),A=C.
 private_2_yolo_UNSAFE_translate_type(_,A,public_2_intType):-A=int,!.
 private_2_yolo_UNSAFE_translate_type(_,A,public_2_atomType):-A=atom,!.
 private_2_yolo_UNSAFE_translate_type(B,A,public_2_relationType(D)):-A=relation(C),!,private_2_translateTypes(B,C,D).
 private_2_yolo_UNSAFE_translate_type(C,A,public_2_constructorType(B,E)):-A=..[B|D],!,private_2_translateTypes(C,D,E).
-private_2_translateType(C,A,B):-public_0_onFailure(lambda0_73(A,B,C),lambda0_74(A)).
-private_2_translateClause(B,A):-public_0_onFailure(lambda0_75(A,B),lambda0_76(B)).
+private_2_translateType(C,A,B):-public_0_onFailure(lambda0_77(A,B,C),lambda0_78(A)).
+private_2_translateClause(B,A):-public_0_onFailure(lambda0_79(A,B),lambda0_80(B)).
 private_2_yolo_UNSAFE_translate_clause(A,private_2_readDefModule(public_2_defmodule(B,E,C))):-A=module(B,D,C),!,atom(B),private_2_yolo_UNSAFE_translate_pairs(D,E),private_2_allAtoms(C).
 private_2_yolo_UNSAFE_translate_clause(A,private_2_readDefUseModule(public_2_def_use_module(B,E,C))):-A=use_module(B,D,C),!,atom(B),private_2_yolo_UNSAFE_translate_pairs(D,E),private_2_allAtoms(C).
-private_2_yolo_UNSAFE_translate_clause(A,private_2_readDefData(public_2_defdata(B,C,E))):-A=datadef(B,C,D),!,atom(B),private_2_areTypeVars(C),public_0_map(D,lambda2_77(C),E).
+private_2_yolo_UNSAFE_translate_clause(A,private_2_readDefData(public_2_defdata(B,C,E))):-A=datadef(B,C,D),!,atom(B),private_2_areTypeVars(C),public_0_map(D,lambda2_81(C),E).
 private_2_yolo_UNSAFE_translate_clause(A,private_2_readDefClause(public_2_defclause(B,C,E))):-A=clausedef(B,C,D),!,atom(B),private_2_areTypeVars(C),private_2_translateTypes(C,D,E).
 private_2_yolo_UNSAFE_translate_clause(A,private_2_readDefGlobalVar(public_2_defglobalvar(B,C,E))):-A=globalvardef(B,C,D),!,atom(B),private_2_areTypeVars(C),private_2_translateType(C,D,E).
 private_2_yolo_UNSAFE_translate_clause(A,private_2_readClauseClause(public_2_clauseclause(C,E,G))):-private_2_yolo_UNSAFE_normalize_clause(A, (B:-F)),B=..[C|D],private_2_translateTerms(D,E),private_2_translateBody(F,G).
@@ -324,20 +329,20 @@ private_2_sortClause(private_2_readDefGlobalVar(E),A,A,B,B,C,C,D,D,[E|F],F,G,G).
 private_2_sortClause(private_2_readClauseClause(F),A,A,B,B,C,C,D,D,E,E,[F|G],G).
 private_2_sortClauses([],A,A,B,B,C,C,D,D,E,E,F,F).
 private_2_sortClauses([A|H],B,J,C,L,D,N,E,P,F,R,G,T):-private_2_sortClause(A,B,I,C,K,D,M,E,O,F,Q,G,S),private_2_sortClauses(H,I,J,K,L,M,N,O,P,Q,R,S,T).
-public_2_loadFile(A,public_2_loadedFile(C,D,E,F,G,H)):-public_1_read_clauses_from_file(A,lambda2_78,B),private_2_sortClauses(B,[C],[],D,[],E,[],F,[],G,[],H,[]).
+public_2_loadFile(A,public_2_loadedFile(C,D,E,F,G,H)):-public_1_read_clauses_from_file(A,lambda2_82,B),private_2_sortClauses(B,[C],[],D,[],E,[],F,[],G,[],H,[]).
 private_1_yolo_UNSAFE_translate_mode(private_1_read_mode,A):-A=read,!.
 private_1_yolo_UNSAFE_translate_mode(private_1_write_mode,A):-A=write,!.
 private_1_yolo_UNSAFE_open_file(B,A,private_1_stream(D)):-private_1_yolo_UNSAFE_translate_mode(A,C),open(B,C,D).
 private_1_yolo_UNSAFE_close_file(private_1_stream(A)):-close(A).
 private_1_withOpenStream(A,B,C):-private_1_yolo_UNSAFE_open_file(A,B,D), (call_lambda1(C,D),private_1_yolo_UNSAFE_close_file(D),!;private_1_yolo_UNSAFE_close_file(D),fail).
 private_1_yolo_UNSAFE_read_clause(private_1_stream(A),D,C):-read_clause(A,B,[]), (B==end_of_file->C=public_0_none;call_lambda2(D,B,E),C=public_0_some(E)).
-private_1_read_clauses_from_stream(B,C,D):-A=lambda1_79(A,B,C),call_lambda1(A,D).
-public_1_read_clauses_from_file(A,B,C):-private_1_withOpenStream(A,private_1_read_mode,lambda1_80(B,C)).
+private_1_read_clauses_from_stream(B,C,D):-A=lambda1_83(A,B,C),call_lambda1(A,D).
+public_1_read_clauses_from_file(A,B,C):-private_1_withOpenStream(A,private_1_read_mode,lambda1_84(B,C)).
 private_1_yolo_UNSAFE_write_clause(A,private_1_stream(C)):-copy_term(A,B),numbervars(B,0,_,[singletons(true)]),write_term(C,B,[numbervars(true),quoted(true)]),format(C,'.~n',[]).
-public_1_writeClauses(B,A):-private_1_withOpenStream(A,private_1_write_mode,lambda1_82(B)).
+public_1_writeClauses(B,A):-private_1_withOpenStream(A,private_1_write_mode,lambda1_86(B)).
 public_0_map([],_,[]).
 public_0_map([B|D],A,[C|E]):-call_lambda2(A,B,C),public_0_map(D,A,E).
-public_0_flatMap(A,B,C):-public_0_foldRight(A,[],lambda3_83(B),C).
+public_0_flatMap(A,B,C):-public_0_foldRight(A,[],lambda3_87(B),C).
 public_0_filter([],_,[]).
 public_0_filter([B|E],A,C):- (call_lambda1(A,B)->C=[B|D];C=D),public_0_filter(E,A,D).
 public_0_foldRight([],A,_,A).
@@ -350,7 +355,7 @@ public_0_zip([],[],[]).
 public_0_zip([A|C],[B|D],[public_0_pair(A,B)|E]):-public_0_zip(C,D,E).
 public_0_setContains([A|_],B):-A==B.
 public_0_setContains([_|A],B):-public_0_setContains(A,B).
-public_0_setsOverlap(A,B):-public_0_find(A,lambda1_84(B),public_0_some(_)),!.
+public_0_setsOverlap(A,B):-public_0_find(A,lambda1_88(B),public_0_some(_)),!.
 public_0_find([],_,public_0_none).
 public_0_find([A|_],B,public_0_some(A)):-call_lambda1(B,A).
 public_0_find([_|A],B,C):-public_0_find(A,B,C).
@@ -358,18 +363,18 @@ public_0_beginsWith(_,[]).
 public_0_beginsWith([A|B],[A|C]):-public_0_beginsWith(B,C).
 public_0_contains(A,B):-public_0_beginsWith(A,B).
 public_0_contains([_|A],B):-public_0_contains(A,B).
-public_0_notMember(B,A):-public_0_forall(A,lambda1_85(B)).
+public_0_notMember(B,A):-public_0_forall(A,lambda1_89(B)).
 public_0_atomContains(A,B):-atom_codes(A,C),atom_codes(B,D),public_0_contains(C,D).
 public_0_appendDiffList([],A,A).
 public_0_appendDiffList([A|B],[A|C],D):-public_0_appendDiffList(B,C,D).
-public_0_makeSetFromList(A,B):-public_0_foldLeft(A,[],lambda3_86,B).
+public_0_makeSetFromList(A,B):-public_0_foldLeft(A,[],lambda3_90,B).
 public_0_setUnion(A,B,D):-append(A,B,C),public_0_makeSetFromList(C,D).
-public_0_setDifference(A,B,C):-public_0_foldLeft(A,[],lambda3_87(B),C).
+public_0_setDifference(A,B,C):-public_0_foldLeft(A,[],lambda3_91(B),C).
 private_0_insertItem([],_,A,[A]):-!.
 private_0_insertItem([A|D],B,C,[A|E]):-call_lambda2(B,C,A),private_0_insertItem(D,B,C,E),!.
 private_0_insertItem([B|C],_,A,[A,B|C]).
-public_0_sortItems(A,B,C,G):-public_0_map(A,lambda2_88(B),D),E=lambda2_89(C),public_0_foldLeft(D,[],lambda3_90(E),F),public_0_map(F,lambda2_91,G).
+public_0_sortItems(A,B,C,G):-public_0_map(A,lambda2_92(B),D),E=lambda2_93(C),public_0_foldLeft(D,[],lambda3_94(E),F),public_0_map(F,lambda2_95,G).
 public_0_onFailure(A,_):-call_lambda0(A),!.
 public_0_onFailure(_,A):-call_lambda0(A),!,fail.
 public_0_yolo_UNSAFE_format_shim(A,B):-format(A,B).
-public_0_duplicates(A,B):-public_0_foldLeft(A,public_0_pair([],[]),lambda3_92,public_0_pair(_,B)).
+public_0_duplicates(A,B):-public_0_foldLeft(A,public_0_pair([],[]),lambda3_96,public_0_pair(_,B)).
