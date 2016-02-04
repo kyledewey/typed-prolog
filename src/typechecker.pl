@@ -6,7 +6,7 @@ use_module('syntax.pl', [],
                          defmodule, def_use_module, loadedFile]).
 use_module('common.pl', [map/3, flatMap/3, zip/3, foldLeft/4, find/3,
                          atomContains/2, forall/2, onFailure/2,
-                         yolo_UNSAFE_format_shim/2],
+                         yolo_UNSAFE_format_shim/2, duplicates/2],
                         [pair, option]).
 
 clausedef(builtinDataDefs, [], [list(defdata)]).
@@ -60,10 +60,14 @@ keys(Pairs, Keys) :-
         map(Pairs, lambda([pair(Key, _), Key], true), Keys).
 
 % succeeds if the provided mapping is unique
-clausedef(mappingUnique, [A, B], [list(pair(A, B))]).
-mappingUnique(Pairs) :-
-        keys(Pairs, Keys),
-        is_set(Keys).
+clausedef(mappingUnique, [A, B], [list(pair(A, B)), % mapping
+                                  atom]).           % error message if not
+mappingUnique(Pairs, ErrorMessage) :-
+    keys(Pairs, Keys),
+    duplicates(Keys, DuplicateKeys),
+    onFailure(
+            lambda([], DuplicateKeys = []),
+            lambda([], yolo_UNSAFE_format_shim(ErrorMessage, [DuplicateKeys]))).
 
 % gets a mapping of constructor names to their corresponding data defs
 clausedef(constructorToDataDefMapping, [], [list(defdata), list(pair(atom, defdata))]).
@@ -76,7 +80,7 @@ constructorToDataDefMapping(DefDatas, Mapping) :-
                      lambda([typeConstructor(Name, _), pair(Name, DefData)], true),
                      DefDataResult))),
             Mapping),
-        mappingUnique(Mapping).
+        mappingUnique(Mapping, 'Duplicate locally-defined constructor names: ~w~n~n').
 
 % gets a mapping of clauses with a given name and arity to their
 % corresponding definitions
@@ -88,7 +92,7 @@ clauseToClauseDefMapping(DefClauses, Mapping) :-
                 (DefClause = defclause(Name, _, FormalParams),
                  length(FormalParams, Arity))),
             Mapping),
-        mappingUnique(Mapping).
+        mappingUnique(Mapping, 'Duplicate clausedefs for: ~w~n~n').
 
 % holds data def mapping, clausedef mapping, and global var defs
 datadef(state, [], [state(list(pair(atom, defdata)),
