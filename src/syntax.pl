@@ -1,7 +1,7 @@
 module(syntax, [loadFile/2],
                [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                 typeConstructor, defdata, clauseclause, defglobalvar,
-                defmodule, def_use_module, loadedFile, bodyUnaryOp]).
+                defmodule, def_use_module, loadedFile, bodyUnaryOp, unop]).
 
 use_module('io.pl', [read_clauses_from_file/3], []).
 use_module('common.pl', [map/3, forall/2, setContains/2, onFailure/2,
@@ -11,8 +11,10 @@ use_module('common.pl', [map/3, forall/2, setContains/2, onFailure/2,
 %
 % The whole int hackery works because variables will never be instantiated.
 datadef(op, [], [plus, minus, mul, div, op_min, op_max,
-                 shift_left, shift_right, bitwise_and, bitwise_or]).
-datadef(exp, [], [exp_var(int), exp_num(int), binop(exp, op, exp)]).
+                 shift_left, shift_right, bitwise_and, bitwise_or,
+                 int_div, int_rem]).
+datadef(unop, [], [op_msb, op_abs]).
+datadef(exp, [], [exp_var(int), exp_num(int), binop(exp, op, exp), unaryop(unop, exp)]).
 datadef(expLhs, [], [lhs_var(int), lhs_num(int)]).
 datadef(term, [], [term_var(int), term_num(int),
                    term_lambda(list(term), body),
@@ -66,8 +68,9 @@ areTypeVars(List) :-
         forall(List, lambda([X], var(X))),
         is_set(List).
 
-clausedef(allAtoms, [A], [list(A)]).
-allAtoms(List) :-
+% unsafe because of the use of atom
+clausedef(yolo_UNSAFE_allAtoms, [A], [list(A)]).
+yolo_UNSAFE_allAtoms(List) :-
         forall(List, lambda([A], atom(A))).
 
 clausedef(yolo_UNSAFE_translate_exp_lhs, [A], [A, expLhs]).
@@ -93,6 +96,12 @@ yolo_UNSAFE_translate_op(Op, shift_left) :- Op = '<<', !.
 yolo_UNSAFE_translate_op(Op, shift_right) :- Op = '>>', !.
 yolo_UNSAFE_translate_op(Op, bitwise_and) :- Op = '/\\', !.
 yolo_UNSAFE_translate_op(Op, bitwise_or) :- Op = '\\/', !.
+yolo_UNSAFE_translate_op(Op, int_div) :- Op = '//', !.
+yolo_UNSAFE_translate_op(Op, int_rem) :- Op = rem, !.
+
+clausedef(yolo_UNSAFE_translate_unop, [A], [A, unop]).
+yolo_UNSAFE_translate_unop(Op, op_msb) :- Op = msb, !.
+yolo_UNSAFE_translate_unop(Op, op_abs) :- Op = abs, !.
 
 clausedef(yolo_UNSAFE_translate_exp, [A], [A, exp]).
 yolo_UNSAFE_translate_exp(Var, exp_var(NewVar)) :-
@@ -109,6 +118,11 @@ yolo_UNSAFE_translate_exp(Structure, binop(Exp1, Op, Exp2)) :-
         yolo_UNSAFE_translate_op(RawOp, Op),
         yolo_UNSAFE_translate_exp(E1, Exp1),
         yolo_UNSAFE_translate_exp(E2, Exp2).
+yolo_UNSAFE_translate_exp(Structure, unaryop(Op, Exp)) :-
+        Structure =.. [RawOp, E],
+        !,
+        yolo_UNSAFE_translate_unop(RawOp, Op),
+        yolo_UNSAFE_translate_exp(E, Exp).
 
 clausedef(yolo_UNSAFE_translate_body_pair_op, [A], [A, bodyPairOp]).
 yolo_UNSAFE_translate_body_pair_op(Op, and) :- Op = ',', !.
@@ -122,7 +136,7 @@ clausedef(translateBody, [A], [A, body]).
 translateBody(Input, Output) :-
         onFailure(
             lambda([], yolo_UNSAFE_translate_body(Input, Output)),
-            lambda([], yolo_UNSAFE_format_shim('Syntax error in body: ~w~n', [Input]))).
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in body: ~w~n~n', [Input]))).
 
 clausedef(yolo_UNSAFE_translate_body, [A], [A, body]).
 yolo_UNSAFE_translate_body(Input, body_is(NewExpLhs, NewExp)) :-
@@ -169,7 +183,7 @@ clausedef(translateTerm, [A], [A, term]).
 translateTerm(Input, Output) :-
         onFailure(
             lambda([], yolo_UNSAFE_translate_term(Input, Output)),
-            lambda([], yolo_UNSAFE_format_shim('Syntax error in term: ~w~n', [Input]))).
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in term: ~w~n~n', [Input]))).
 
 clausedef(yolo_UNSAFE_translate_term, [A], [A, term]).
 yolo_UNSAFE_translate_term(Var, term_var(NewVar)) :-
@@ -221,13 +235,13 @@ clausedef(translateType, [A, B], [list(A), B, type]).
 translateType(TypeVars, Input, Output) :-
         onFailure(
             lambda([], yolo_UNSAFE_translate_type(TypeVars, Input, Output)),
-            lambda([], yolo_UNSAFE_format_shim('Syntax error in type: ~w~n', [Input]))).
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in type: ~w~n~n', [Input]))).
 
 clausedef(translateClause, [A], [A, readclause]).
 translateClause(Clause, ReadClause) :-
         onFailure(
             lambda([], yolo_UNSAFE_translate_clause(Clause, ReadClause)),
-            lambda([], yolo_UNSAFE_format_shim('Syntax error in clause: ~w~n', [Clause]))).
+            lambda([], yolo_UNSAFE_format_shim('Syntax error in clause: ~w~n~n', [Clause]))).
 
 clausedef(yolo_UNSAFE_translate_clause, [A], [A, readclause]).
 yolo_UNSAFE_translate_clause(
@@ -237,7 +251,7 @@ yolo_UNSAFE_translate_clause(
         !,
         atom(Name),
         yolo_UNSAFE_translate_pairs(RawExportedClauses, ProcessedExportedClauses),
-        allAtoms(ExportedData).
+        yolo_UNSAFE_allAtoms(ExportedData).
 yolo_UNSAFE_translate_clause(
         Input,
         readDefUseModule(def_use_module(Name, ProcessedImportedClauses, ImportedData))) :-
@@ -245,7 +259,7 @@ yolo_UNSAFE_translate_clause(
         !,
         atom(Name),
         yolo_UNSAFE_translate_pairs(RawImportedClauses, ProcessedImportedClauses),
-        allAtoms(ImportedData).
+        yolo_UNSAFE_allAtoms(ImportedData).
 yolo_UNSAFE_translate_clause(
         Input,
         readDefData(defdata(Name, TypeVars, ProcessedConstructors))) :-
