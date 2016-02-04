@@ -10,7 +10,7 @@ call_lambda0(lambda0_72(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in b
 call_lambda0(lambda0_71(B,A)):-private_2_yolo_UNSAFE_translate_body(A,B).
 call_lambda0(lambda0_51(A)):-public_0_duplicates(A,B),public_0_yolo_UNSAFE_format_shim('Duplicate constructors in scope: ~w~n',[B]).
 call_lambda0(lambda0_50(A)):-is_set(A).
-call_lambda0(lambda0_48(C,B,A)):-public_0_yolo_UNSAFE_format_shim('Something exported not defined in: ~w~n',[A]),public_0_yolo_UNSAFE_format_shim('Nonexistent clauses are: ~w~n',[B]),public_0_yolo_UNSAFE_format_shim('Nonexistent constructors are: ~w~n',[C]).
+call_lambda0(lambda0_48(C,B,A)):-public_0_yolo_UNSAFE_format_shim('Something exported not defined in: ~w~n',[A]),public_0_yolo_UNSAFE_format_shim('Nonexistent clauses are: ~w~n',[B]),public_0_yolo_UNSAFE_format_shim('Nonexistent types are: ~w~n',[C]).
 call_lambda0(lambda0_47(B,A)):-A=[],B=[].
 call_lambda0(lambda0_33(A)):-public_0_yolo_UNSAFE_format_shim('Could not read from possibly nonexistent file: ~w~n',[A]).
 call_lambda0(lambda0_32(A)):-access_file(A,read).
@@ -32,13 +32,13 @@ call_lambda1(lambda1_84(B,C),A):-private_1_read_clauses_from_stream(A,B,C).
 call_lambda1(lambda1_83(F,A,B),D):-private_1_yolo_UNSAFE_read_clause(A,B,C), (C=public_0_some(E)->D=[E|G],call_lambda1(F,G);D=[]).
 call_lambda1(lambda1_70,A):-atom(A).
 call_lambda1(lambda1_69,A):-var(A).
-call_lambda1(lambda1_46(A),B):-public_0_find(A,lambda1_45(B),public_0_some(_)),!.
+call_lambda1(lambda1_46(A),B):-public_0_existsOnce(A,lambda1_45(B)).
 call_lambda1(lambda1_45(A),public_2_defdata(A,_,_)).
-call_lambda1(lambda1_44(A),public_0_pair(B,C)):-public_0_find(A,lambda1_43(B,C),public_0_some(_)),!.
+call_lambda1(lambda1_44(A),public_0_pair(B,C)):-public_0_existsOnce(A,lambda1_43(B,C)).
 call_lambda1(lambda1_43(A,C),public_2_defclause(A,_,B)):-length(B,C).
-call_lambda1(lambda1_42(A),B):-public_0_find(A,lambda1_41(B),public_0_some(_)),!->fail;true.
+call_lambda1(lambda1_42(A),B):- \+public_0_existsOnce(A,lambda1_41(B)).
 call_lambda1(lambda1_41(A),public_2_defdata(A,_,_)).
-call_lambda1(lambda1_40(A),public_0_pair(B,C)):-public_0_find(A,lambda1_39(B,C),public_0_some(_)),!->fail;true.
+call_lambda1(lambda1_40(A),public_0_pair(B,C)):- \+public_0_existsOnce(A,lambda1_39(B,C)).
 call_lambda1(lambda1_39(A,C),public_2_defclause(A,_,B)):-length(B,C).
 call_lambda1(lambda1_37(B),A):-member(A,B).
 call_lambda1(lambda1_31(A),B):-private_4_typecheckClauseWithErrorMessage(A,B).
@@ -231,7 +231,8 @@ private_3_allImportedConstructors(B,A,C):-public_0_flatMap(A,lambda2_36(B),C).
 private_3_extractConstructors(private_3_loadedModule(_,_,_,A),B,F):-A=public_2_loadedFile(public_2_defmodule(_,_,C),_,D,_,_,_),public_0_forall(B,lambda1_37(C)),public_0_map(B,lambda2_38(D),E),private_3_constructorsInDataDefs(E,F).
 private_3_nonexistentExports(public_2_loadedFile(public_2_defmodule(_,A,D),_,E,B,_,_),C,F):-public_0_filter(A,lambda1_40(B),C),public_0_filter(D,lambda1_42(E),F).
 private_3_ensureExportsExist(public_2_loadedFile(public_2_defmodule(_,A,C),_,D,B,_,_)):-public_0_forall(A,lambda1_44(B)),public_0_forall(C,lambda1_46(D)).
-private_3_directLoadModule(A,F,H,[private_3_loadedModule(A,N,G,B)|I]):-public_2_loadFile(A,B),B=public_2_loadedFile(_,E,J,_,_,_),private_3_nonexistentExports(B,D,C),public_0_onFailure(lambda0_47(C,D),lambda0_48(C,D,A)),public_0_foldLeft(E,public_0_pair(F,G),lambda3_49(H,A),public_0_pair(I,[])),private_3_allImportedConstructors(I,G,K),private_3_constructorsInDataDefs(J,L),append(K,L,M),public_0_onFailure(lambda0_50(M),lambda0_51(M)),private_3_freshModuleId(N).
+private_3_ensureEverythingExportedIsDefined(D,A):-private_3_nonexistentExports(A,C,B),public_0_onFailure(lambda0_47(B,C),lambda0_48(B,C,D)).
+private_3_directLoadModule(A,D,F,[private_3_loadedModule(A,L,E,B)|G]):-public_2_loadFile(A,B),B=public_2_loadedFile(_,C,H,_,_,_),private_3_ensureEverythingExportedIsDefined(A,B),public_0_foldLeft(C,public_0_pair(D,E),lambda3_49(F,A),public_0_pair(G,[])),private_3_allImportedConstructors(G,E,I),private_3_constructorsInDataDefs(H,J),append(I,J,K),public_0_onFailure(lambda0_50(K),lambda0_51(K)),private_3_freshModuleId(L).
 private_3_renamedClause(private_3_renaming(D,_,_,_),A,B,C):-member(public_0_pair(public_0_pair(A,B),C),D),!.
 private_3_renamedClause(_,A,_,A).
 private_3_renamedType(private_3_renaming(_,C,_,_),A,B):-member(public_0_pair(A,B),C),!.

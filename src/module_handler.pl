@@ -1,7 +1,7 @@
 module(module_handler, [handleModules/5], []).
 
 use_module('common.pl', [notMember/2, foldLeft/4, flatMap/3, map/3, forall/2,
-                         foldRight/4, appendDiffList/3, onFailure/2, find/3,
+                         foldRight/4, appendDiffList/3, onFailure/2, existsOnce/2,
                          yolo_UNSAFE_format_shim/2, duplicates/2, filter/3],
                         [pair, tup3, tup4, option]).
 use_module('syntax.pl', [loadFile/2],
@@ -86,54 +86,58 @@ extractConstructors(loadedModule(_, _, _, LoadedFile),
         constructorsInDataDefs(ImportedDataDefs, Constructors).
 
 % Finds all exports that are not defined in the file.
-clausedef(nonexistentExports, [], [loadedFile, list(pair(atom, int)), list(atom)]).
-nonexistentExports(loadedFile(defmodule(_, ExportedClauses, ExportedConstructors),
+clausedef(nonexistentExports, [], [loadedFile, % the file
+                                   list(pair(atom, int)), % non-defined exported clauses
+                                   list(atom)]).          % non-defined exported types
+nonexistentExports(loadedFile(defmodule(_, ExportedClauses, ExportedTypes),
                               _,
-                              DefinedConstructors,
+                              DefinedTypes,
                               DefinedClauses,
                               _,
                               _),
                    NonexistentClauses,
-                   NonexistentConstructors) :-
+                   NonexistentTypes) :-
     filter(ExportedClauses,
            lambda([pair(ClauseName, ClauseArity)],
-                  (find(DefinedClauses,
-                        lambda([defclause(ClauseName, _, Types)],
-                               length(Types, ClauseArity)),
-                        some(_)),
-                   !) -> fail; true),
+                  \+ existsOnce(DefinedClauses,
+                                lambda([defclause(ClauseName, _, Types)],
+                                       length(Types, ClauseArity)))),
            NonexistentClauses),
-    filter(ExportedConstructors,
-           lambda([ConstructorName],
-                  (find(DefinedConstructors,
-                        lambda([defdata(ConstructorName, _, _)], true),
-                        some(_)),
-                   !) -> fail; true),
-           NonexistentConstructors).
-
+    filter(ExportedTypes,
+           lambda([TypeName],
+                  \+ existsOnce(DefinedTypes,
+                                lambda([defdata(TypeName, _, _)], true))),
+           NonexistentTypes).
 
 % Makes sure that anything exported in the given file is actually defined
 % in the given file.
 clausedef(ensureExportsExist, [], [loadedFile]).
-ensureExportsExist(loadedFile(defmodule(_, ExportedClauses, ExportedConstructors),
+ensureExportsExist(loadedFile(defmodule(_, ExportedClauses, ExportedTypes),
                               _,
-                              DefinedConstructors,
+                              DefinedTypes,
                               DefinedClauses,
                               _,
                               _)) :-
     forall(ExportedClauses,
            lambda([pair(ClauseName, ClauseArity)],
-                  (find(DefinedClauses,
-                        lambda([defclause(ClauseName, _, Types)],
-                               length(Types, ClauseArity)),
-                        some(_)),
-                   !))),
-    forall(ExportedConstructors,
+                  existsOnce(DefinedClauses,
+                             lambda([defclause(ClauseName, _, Types)],
+                                    length(Types, ClauseArity))))),
+    forall(ExportedTypes,
            lambda([ConstructorName],
-                  (find(DefinedConstructors,
-                        lambda([defdata(ConstructorName, _, _)], true),
-                        some(_)),
-                   !))).
+                  existsOnce(DefinedTypes,
+                             lambda([defdata(ConstructorName, _, _)], true)))).
+
+clausedef(ensureEverythingExportedIsDefined, [], [atom,         % filename
+                                                  loadedFile]). % the file that was loaded in
+ensureEverythingExportedIsDefined(FileName, LoadedFile) :-
+    nonexistentExports(LoadedFile, NonexistentClauses, NonexistentTypes),
+    onFailure(
+            lambda([], (NonexistentClauses=[], NonexistentTypes=[])),
+            lambda([], (
+                       yolo_UNSAFE_format_shim('Something exported not defined in: ~w~n', [FileName]),
+                       yolo_UNSAFE_format_shim('Nonexistent clauses are: ~w~n', [NonexistentClauses]),
+                       yolo_UNSAFE_format_shim('Nonexistent types are: ~w~n', [NonexistentTypes])))).
 
 clausedef(directLoadModule, [], [atom, % absolute filename
                                  list(loadedModule), % already loaded modules
@@ -145,14 +149,8 @@ directLoadModule(FileName, AlreadyLoaded, InProgress,
         LoadedFile = loadedFile(_, UsesModules, DataDefs, _, _, _),
 
         % make sure everything exported actually exists
-        nonexistentExports(LoadedFile, NonexistentClauses, NonexistentConstructors),
-        onFailure(
-                lambda([], (NonexistentClauses=[], NonexistentConstructors=[])),
-                lambda([], (
-                           yolo_UNSAFE_format_shim('Something exported not defined in: ~w~n', [FileName]),
-                           yolo_UNSAFE_format_shim('Nonexistent clauses are: ~w~n', [NonexistentClauses]),
-                           yolo_UNSAFE_format_shim('Nonexistent constructors are: ~w~n', [NonexistentConstructors])))),
-
+        ensureEverythingExportedIsDefined(FileName, LoadedFile),
+        
         % perform the actual loading
         foldLeft(UsesModules, pair(AlreadyLoaded, ProcessedUses),
                  lambda([pair(CurLoaded,
