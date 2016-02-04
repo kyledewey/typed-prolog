@@ -109,25 +109,6 @@ nonexistentExports(loadedFile(defmodule(_, ExportedClauses, ExportedTypes),
                                 lambda([defdata(TypeName, _, _)], true))),
            NonexistentTypes).
 
-% Makes sure that anything exported in the given file is actually defined
-% in the given file.
-clausedef(ensureExportsExist, [], [loadedFile]).
-ensureExportsExist(loadedFile(defmodule(_, ExportedClauses, ExportedTypes),
-                              _,
-                              DefinedTypes,
-                              DefinedClauses,
-                              _,
-                              _)) :-
-    forall(ExportedClauses,
-           lambda([pair(ClauseName, ClauseArity)],
-                  existsOnce(DefinedClauses,
-                             lambda([defclause(ClauseName, _, Types)],
-                                    length(Types, ClauseArity))))),
-    forall(ExportedTypes,
-           lambda([ConstructorName],
-                  existsOnce(DefinedTypes,
-                             lambda([defdata(ConstructorName, _, _)], true)))).
-
 clausedef(ensureEverythingExportedIsDefined, [], [atom,         % filename
                                                   loadedFile]). % the file that was loaded in
 ensureEverythingExportedIsDefined(FileName, LoadedFile) :-
