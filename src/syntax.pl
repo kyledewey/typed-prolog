@@ -68,8 +68,9 @@ areTypeVars(List) :-
         forall(List, lambda([X], var(X))),
         is_set(List).
 
-clausedef(allAtoms, [A], [list(A)]).
-allAtoms(List) :-
+% unsafe because of the use of atom
+clausedef(yolo_UNSAFE_allAtoms, [A], [list(A)]).
+yolo_UNSAFE_allAtoms(List) :-
         forall(List, lambda([A], atom(A))).
 
 clausedef(yolo_UNSAFE_translate_exp_lhs, [A], [A, expLhs]).
@@ -250,7 +251,7 @@ yolo_UNSAFE_translate_clause(
         !,
         atom(Name),
         yolo_UNSAFE_translate_pairs(RawExportedClauses, ProcessedExportedClauses),
-        allAtoms(ExportedData).
+        yolo_UNSAFE_allAtoms(ExportedData).
 yolo_UNSAFE_translate_clause(
         Input,
         readDefUseModule(def_use_module(Name, ProcessedImportedClauses, ImportedData))) :-
@@ -258,7 +259,7 @@ yolo_UNSAFE_translate_clause(
         !,
         atom(Name),
         yolo_UNSAFE_translate_pairs(RawImportedClauses, ProcessedImportedClauses),
-        allAtoms(ImportedData).
+        yolo_UNSAFE_allAtoms(ImportedData).
 yolo_UNSAFE_translate_clause(
         Input,
         readDefData(defdata(Name, TypeVars, ProcessedConstructors))) :-
