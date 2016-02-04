@@ -34,6 +34,7 @@ builtinClauseDefs(
          defclause(@=<, [A], [A, A]),
          defclause(@>=, [A], [A, A]),
          defclause(=, [A], [A, A]),
+         defclause(unify_with_occurs_check, [A], [A, A]),
          defclause(\=, [A], [A, A]),
          defclause(#>, [], [intType, intType]),
          defclause(#<, [], [intType, intType]),
