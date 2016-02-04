@@ -59,15 +59,20 @@ clausedef(keys, [A, B], [list(pair(A, B)), list(A)]).
 keys(Pairs, Keys) :-
         map(Pairs, lambda([pair(Key, _), Key], true), Keys).
 
+clausedef(ensureUnique, [A], [list(A), % items
+                              atom]).  % error message if not
+ensureUnique(Items, ErrorMessage) :-
+    duplicates(Items, Duplicates),
+    onFailure(
+            lambda([], Duplicates = []),
+            lambda([], yolo_UNSAFE_format_shim(ErrorMessage, [Duplicates]))).
+    
 % succeeds if the provided mapping is unique
 clausedef(mappingUnique, [A, B], [list(pair(A, B)), % mapping
                                   atom]).           % error message if not
 mappingUnique(Pairs, ErrorMessage) :-
     keys(Pairs, Keys),
-    duplicates(Keys, DuplicateKeys),
-    onFailure(
-            lambda([], DuplicateKeys = []),
-            lambda([], yolo_UNSAFE_format_shim(ErrorMessage, [DuplicateKeys]))).
+    ensureUnique(Keys, ErrorMessage).
 
 % gets a mapping of constructor names to their corresponding data defs
 clausedef(constructorToDataDefMapping, [], [list(defdata), list(pair(atom, defdata))]).
@@ -104,12 +109,20 @@ datadef(state, [], [state(list(pair(atom, defdata)),
                           list(pair(pair(atom, int), defclause)),
                           list(defglobalvar))]).
 
+clausedef(ensureTypeNamesUnique, [], [list(defdata)]).
+ensureTypeNamesUnique(DataDefs) :-
+    map(DataDefs,
+        lambda([defdata(Name, _, _), Name], true),
+        TypeNames),
+    ensureUnique(TypeNames, 'Duplicate type names: ~w~n~n').
+    
 clausedef(makeState, [], [list(defdata), list(defclause),
                           list(defglobalvar), state]).
 makeState(DataDefs, ClauseDefs, GlobalVarDefs,
           state(DataDefMapping, ClauseDefMapping, GlobalVarDefs)) :-
-        constructorToDataDefMapping(DataDefs, DataDefMapping),
-        clauseToClauseDefMapping(ClauseDefs, ClauseDefMapping).
+    ensureTypeNamesUnique(DataDefs),
+    constructorToDataDefMapping(DataDefs, DataDefMapping),
+    clauseToClauseDefMapping(ClauseDefs, ClauseDefMapping).
 
 clausedef(expectedFormalParamTypes, [], [state, % current type state
                                          atom, % name of the clause
