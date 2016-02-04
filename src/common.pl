@@ -1,4 +1,4 @@
-module(common, [map/3, filter/3, foldLeft/4, forall/2,
+module(common, [map/3, filter/3, foldLeft/4, forall/2, exists/2,
                 setContains/2, flatMap/3, foldRight/4,
                 zip/3, find/3, beginsWith/2, contains/2,
                 atomContains/2, notMember/2, appendDiffList/3,
@@ -58,6 +58,10 @@ forall([H|T], Relation) :-
         call(Relation, H),
         forall(T, Relation).
 
+clausedef(exists, [A], [list(A), relation([A])]).
+exists(List, Relation) :-
+    find(List, Relation, some(_)).
+
 % unlike the usual definition, this will fail if the two input lists
 % are not of the same length.
 clausedef(zip, [A, B], [list(A), list(B), list(pair(A, B))]).
@@ -74,9 +78,10 @@ setContains([_|T], Item) :-
 
 clausedef(setsOverlap, [A], [list(A), list(A)]).
 setsOverlap(Set1, Set2) :-
-    findOnce(Set1,
-             lambda([Item], setContains(Set2, Item)),
-             some(_)).
+    once(lambda([],
+                exists(Set1,
+                       lambda([Item],
+                              setContains(Set2, Item))))).
 
 clausedef(find, [A], [list(A), relation([A]), option(A)]).
 find([], _, none).
