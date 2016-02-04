@@ -1,6 +1,5 @@
 :-use_module(library(clpfd)).
-call_lambda0(lambda0_90(B,C,A)):-public_0_find(A,B,C).
-call_lambda0(lambda0_89(B,A)):-public_0_exists(A,lambda1_88(B)).
+call_lambda0(lambda0_89(B,C,A)):-public_0_find(A,B,C).
 call_lambda0(lambda0_80(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in clause: ~w~n~n',[A]).
 call_lambda0(lambda0_79(B,A)):-private_2_yolo_UNSAFE_translate_clause(A,B).
 call_lambda0(lambda0_78(A)):-public_0_yolo_UNSAFE_format_shim('Syntax error in type: ~w~n~n',[A]).
@@ -25,7 +24,7 @@ call_lambda0(lambda0_22(A,B)):-public_0_yolo_UNSAFE_format_shim('Unknown clause:
 call_lambda0(lambda0_21(B,D,C,A)):-private_4_expectedFormalParamTypes(A,B,C,D).
 call_lambda0(lambda0_20(A)):-public_0_yolo_UNSAFE_format_shim('Type error at body ~w~n~n',[A]).
 call_lambda0(lambda0_19(B,D,C,A)):-private_4_rawTypecheckBody(A,B,C,D).
-call_lambda1(lambda1_91(A),B):-A\=B.
+call_lambda1(lambda1_90(A),B):-A\=B.
 call_lambda1(lambda1_88(A),B):-public_0_setContains(A,B).
 call_lambda1(lambda1_86(A),B):-public_0_forall(A,lambda1_85(B)).
 call_lambda1(lambda1_85(B),A):-private_1_yolo_UNSAFE_write_clause(A,B).
@@ -48,9 +47,9 @@ call_lambda1(lambda1_9,public_0_pair(_,A)):-public_0_find(A,lambda1_8,public_0_s
 call_lambda1(lambda1_8,A):-private_5_clpClause(A).
 call_lambda1(lambda1_6(B),public_0_pair(A,_)):-private_5_isCallLambda(A),public_0_notMember(A,B).
 call_lambda1(lambda1_4(A),B):-public_0_setContains(A,B).
-call_lambda2(lambda2_97,public_0_pair(A,_),A).
-call_lambda2(lambda2_95(A),public_0_pair(_,B),public_0_pair(_,C)):-call_lambda2(A,B,C).
-call_lambda2(lambda2_94(B),A,public_0_pair(A,C)):-call_lambda2(B,A,C).
+call_lambda2(lambda2_96,public_0_pair(A,_),A).
+call_lambda2(lambda2_94(A),public_0_pair(_,B),public_0_pair(_,C)):-call_lambda2(A,B,C).
+call_lambda2(lambda2_93(B),A,public_0_pair(A,C)):-call_lambda2(B,A,C).
 call_lambda2(lambda2_82,A,B):-private_2_translateClause(A,B).
 call_lambda2(lambda2_81(C),A,public_2_typeConstructor(B,E)):-A=..[B|D],private_2_translateTypes(C,D,E).
 call_lambda2(lambda2_76(A),B,C):-private_2_translateType(A,B,C).
@@ -84,10 +83,10 @@ call_lambda2(lambda2_7,public_2_clauseclause(A,B,D),public_0_pair(public_0_pair(
 call_lambda2(lambda2_5,A,public_2_term_var(A)).
 call_lambda2(lambda2_1,A,B):-private_6_yolo_UNSAFE_translate_clause(A,B).
 call_lambda2(lambda2_0,A,B):-private_6_yolo_UNSAFE_translate_term(A,B).
-call_lambda3(lambda3_98,public_0_pair(A,C),B,public_0_pair(E,D)):-public_0_setContains(A,B)-> (public_0_setContains(C,B)->D=C;D=[B|C]),E=A;E=[B|A],D=C.
-call_lambda3(lambda3_96(B),A,C,D):-private_0_insertItem(A,B,C,D).
-call_lambda3(lambda3_93(A),C,B,D):-public_0_setContains(A,B)->C=D;D=[B|C].
-call_lambda3(lambda3_92,A,B,C):-public_0_setContains(A,B)->A=C;C=[B|A].
+call_lambda3(lambda3_97,public_0_pair(A,C),B,public_0_pair(E,D)):-public_0_setContains(A,B)-> (public_0_setContains(C,B)->D=C;D=[B|C]),E=A;E=[B|A],D=C.
+call_lambda3(lambda3_95(B),A,C,D):-private_0_insertItem(A,B,C,D).
+call_lambda3(lambda3_92(A),C,B,D):-public_0_setContains(A,B)->C=D;D=[B|C].
+call_lambda3(lambda3_91,A,B,C):-public_0_setContains(A,B)->A=C;C=[B|A].
 call_lambda3(lambda3_87(A),B,D,E):-call_lambda2(A,B,C),append(C,D,E).
 call_lambda3(lambda3_67(A),public_0_tup4(C,E,G,I),B,public_0_tup4(D,F,H,J)):-private_3_translateModule(A,B,C,D,E,F,G,H,I,J).
 call_lambda3(lambda3_58(E,C),public_2_defdata(A,_,G),public_0_pair(B,I),public_0_pair([public_0_pair(A,F)|B],J)):- (member(A,C)->D=private_3_mod_public;D=private_3_mod_private),private_3_yolo_UNSAFE_mangled_name(D,E,A,F),public_0_map(G,lambda2_57(E,D),H),append(H,I,J).
@@ -354,32 +353,33 @@ public_0_foldLeft([C|D],B,A,F):-call_lambda3(A,B,C,E),public_0_foldLeft(D,E,A,F)
 public_0_forall([],_).
 public_0_forall([B|C],A):-call_lambda1(A,B),public_0_forall(C,A).
 public_0_exists(A,B):-public_0_find(A,B,public_0_some(_)).
+public_0_existsOnce(A,B):-private_0_findOnce(A,B,public_0_some(_)).
 public_0_zip([],[],[]).
 public_0_zip([A|C],[B|D],[public_0_pair(A,B)|E]):-public_0_zip(C,D,E).
 public_0_setContains([A|_],B):-A==B.
 public_0_setContains([_|A],B):-public_0_setContains(A,B).
-public_0_setsOverlap(B,A):-public_0_once(lambda0_89(A,B)).
+public_0_setsOverlap(A,B):-public_0_existsOnce(A,lambda1_88(B)).
 public_0_find([],_,public_0_none).
 public_0_find([A|_],B,public_0_some(A)):-call_lambda1(B,A).
 public_0_find([_|A],B,C):-public_0_find(A,B,C).
-private_0_findOnce(C,A,B):-public_0_once(lambda0_90(A,B,C)).
+private_0_findOnce(C,A,B):-public_0_once(lambda0_89(A,B,C)).
 public_0_once(A):-call_lambda0(A),!.
 public_0_beginsWith(_,[]).
 public_0_beginsWith([A|B],[A|C]):-public_0_beginsWith(B,C).
 public_0_contains(A,B):-public_0_beginsWith(A,B).
 public_0_contains([_|A],B):-public_0_contains(A,B).
-public_0_notMember(B,A):-public_0_forall(A,lambda1_91(B)).
+public_0_notMember(B,A):-public_0_forall(A,lambda1_90(B)).
 public_0_atomContains(A,B):-atom_codes(A,C),atom_codes(B,D),public_0_contains(C,D).
 public_0_appendDiffList([],A,A).
 public_0_appendDiffList([A|B],[A|C],D):-public_0_appendDiffList(B,C,D).
-public_0_makeSetFromList(A,B):-public_0_foldLeft(A,[],lambda3_92,B).
+public_0_makeSetFromList(A,B):-public_0_foldLeft(A,[],lambda3_91,B).
 public_0_setUnion(A,B,D):-append(A,B,C),public_0_makeSetFromList(C,D).
-public_0_setDifference(A,B,C):-public_0_foldLeft(A,[],lambda3_93(B),C).
+public_0_setDifference(A,B,C):-public_0_foldLeft(A,[],lambda3_92(B),C).
 private_0_insertItem([],_,A,[A]):-!.
 private_0_insertItem([A|D],B,C,[A|E]):-call_lambda2(B,C,A),private_0_insertItem(D,B,C,E),!.
 private_0_insertItem([B|C],_,A,[A,B|C]).
-public_0_sortItems(A,B,C,G):-public_0_map(A,lambda2_94(B),D),E=lambda2_95(C),public_0_foldLeft(D,[],lambda3_96(E),F),public_0_map(F,lambda2_97,G).
+public_0_sortItems(A,B,C,G):-public_0_map(A,lambda2_93(B),D),E=lambda2_94(C),public_0_foldLeft(D,[],lambda3_95(E),F),public_0_map(F,lambda2_96,G).
 public_0_onFailure(A,_):-call_lambda0(A),!.
 public_0_onFailure(_,A):-call_lambda0(A),!,fail.
 public_0_yolo_UNSAFE_format_shim(A,B):-format(A,B).
-public_0_duplicates(A,B):-public_0_foldLeft(A,public_0_pair([],[]),lambda3_98,public_0_pair(_,B)).
+public_0_duplicates(A,B):-public_0_foldLeft(A,public_0_pair([],[]),lambda3_97,public_0_pair(_,B)).
