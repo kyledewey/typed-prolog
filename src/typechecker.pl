@@ -80,6 +80,8 @@ constructorToDataDefMapping(DefDatas, Mapping) :-
                      lambda([typeConstructor(Name, _), pair(Name, DefData)], true),
                      DefDataResult))),
             Mapping),
+        % NOTE: this does not appear in practice as module rewriting
+        % catches this first.
         mappingUnique(Mapping, 'Duplicate locally-defined constructor names: ~w~n~n').
 
 % gets a mapping of clauses with a given name and arity to their
@@ -92,6 +94,9 @@ clauseToClauseDefMapping(DefClauses, Mapping) :-
                 (DefClause = defclause(Name, _, FormalParams),
                  length(FormalParams, Arity))),
             Mapping),
+        % TODO: should this test be moved to module rewriting?
+        % A similar test for constructors is already handled there
+        % (see `constructorToDataDefMapping` for details)
         mappingUnique(Mapping, 'Duplicate clausedefs for: ~w~n~n').
 
 % holds data def mapping, clausedef mapping, and global var defs
