@@ -25,6 +25,7 @@ builtinClauseDefs(
          defclause(var, [A], [A]),
          defclause(nonvar, [A], [A]),
          defclause(atom, [A], [A]),
+         defclause(integer, [], [intType]),
          defclause(>, [], [intType, intType]),
          defclause(<, [], [intType, intType]),
          defclause(=<, [], [intType, intType]),
@@ -153,6 +154,9 @@ typecheckExp(TypeEnv, binop(E1, _, E2), NewTypeEnv) :-
         !,
         typecheckExp(TypeEnv, E1, TempTypeEnv), !,
         typecheckExp(TempTypeEnv, E2, NewTypeEnv).
+typecheckExp(TypeEnv, unaryop(_, E), NewTypeEnv) :-
+        !,
+        typecheckExp(TypeEnv, E, NewTypeEnv).
 
 clausedef(typecheckVarUse, [], [state,
                                 list(pair(int, type)), % input type environment,
@@ -175,7 +179,7 @@ clausedef(typecheckBody, [], [state,
 typecheckBody(State, TypeEnv, Body, NewTypeEnv) :-
         onFailure(
             lambda([], rawTypecheckBody(State, TypeEnv, Body, NewTypeEnv)),
-            lambda([], yolo_UNSAFE_format_shim('Type error at body ~w~n', [Body]))).
+            lambda([], yolo_UNSAFE_format_shim('Type error at body ~w~n~n', [Body]))).
 
 clausedef(rawTypecheckBody, [], [state,
                                  list(pair(int, type)), % input type environment,
@@ -207,7 +211,7 @@ rawTypecheckBody(State, TypeEnv, firstOrderCall(Name, ActualParams), NewTypeEnv)
         FormalParams = _, % introduce variable
         onFailure(
             lambda([], expectedFormalParamTypes(State, Name, Arity, FormalParams)),
-            lambda([], yolo_UNSAFE_format_shim('Unknown clause: ~w~n', [pair(Name, Arity)]))),
+            lambda([], yolo_UNSAFE_format_shim('Unknown clause: ~w~n~n', [pair(Name, Arity)]))),
         typeofTerms(State, TypeEnv, ActualParams, FormalParams, NewTypeEnv), !.
 
 clausedef(typeofTerm, [], [state,
@@ -223,9 +227,9 @@ typeofTerm(State, TypeEnv, Term, ExpectedType, NewTypeEnv) :-
                     onFailure(
                         lambda([],
                                (rawTypeofTerm(State, TypeEnv, Term, ActualType, _),
-                                yolo_UNSAFE_format_shim('\tFound: ~w~n\tExpected: ~w~n', [ActualType, ExpectedType]))),
+                                yolo_UNSAFE_format_shim('\tFound: ~w~n\tExpected: ~w~n~n', [ActualType, ExpectedType]))),
                         lambda([],
-                               (yolo_UNSAFE_format_shim('\tFound: UNKNOWN~n\tExpected: ~w~n', [ExpectedType]))))))).
+                               (yolo_UNSAFE_format_shim('\tFound: UNKNOWN~n\tExpected: ~w~n~n', [ExpectedType]))))))).
 
 clausedef(rawTypeofTerm, [], [state,
                               list(pair(int, type)), % input type environment
@@ -281,7 +285,7 @@ clausedef(typecheckClauseWithErrorMessage, [], [state, clauseclause]).
 typecheckClauseWithErrorMessage(State, Clause) :-
     onFailure(
             lambda([], typecheckClause(State, Clause)),
-            lambda([], yolo_UNSAFE_format_shim('Type error at clause ~w~n', [Clause]))).
+            lambda([], yolo_UNSAFE_format_shim('Type error at clause ~w~n~n', [Clause]))).
 
 clausedef(typecheckClause, [], [state, clauseclause]).
 typecheckClause(State, clauseclause(Name, FormalParams, Body)) :-

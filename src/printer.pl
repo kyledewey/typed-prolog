@@ -4,7 +4,7 @@ use_module('common.pl', [map/3], []).
 use_module('syntax.pl', [],
                         [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                          typeConstructor, defdata, clauseclause, defglobalvar,
-                         defmodule, def_use_module, loadedFile, bodyUnaryOp]).
+                         defmodule, def_use_module, loadedFile, bodyUnaryOp, unop]).
 use_module('io.pl', [writeClauses/2], []).
 
 % Handles writing to files.  Assumes that translation has already occurred, so that
@@ -24,6 +24,12 @@ translateOp(shift_left, '<<').
 translateOp(shift_right, '>>').
 translateOp(bitwise_and, '/\\').
 translateOp(bitwise_or, '\\/').
+translateOp(int_div, '//').
+translateOp(int_rem, 'rem').
+
+clausedef(translateUnop, [], [unop, atom]).
+translateUnop(op_msb, msb).
+translateUnop(op_abs, abs).
 
 clausedef(translateBodyUnaryOp, [], [bodyUnaryOp, atom]).
 translateBodyUnaryOp(not, '\\+').
@@ -41,6 +47,10 @@ yolo_UNSAFE_translate_exp(binop(E1, Op, E2), Output) :-
         yolo_UNSAFE_translate_exp(E1, NewE1),
         yolo_UNSAFE_translate_exp(E2, NewE2),
         Output =.. [NewOp, NewE1, NewE2].
+yolo_UNSAFE_translate_exp(unaryop(Op, E), Output) :-
+        translateUnop(Op, NewOp),
+        yolo_UNSAFE_translate_exp(E, NewE),
+        Output =.. [NewOp, NewE].
 
 clausedef(yolo_UNSAFE_translate_exp_lhs, [A], [expLhs, A]).
 yolo_UNSAFE_translate_exp_lhs(lhs_var(X), NewX) :- X = NewX.
