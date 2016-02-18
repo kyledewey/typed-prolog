@@ -24,6 +24,7 @@ builtinClauseDefs(
          defclause('!', [], []),
          defclause(var, [A], [A]),
          defclause(nonvar, [A], [A]),
+         defclause(ground, [A], [A]),
          defclause(>, [], [intType, intType]),
          defclause(<, [], [intType, intType]),
          defclause(=<, [], [intType, intType]),
