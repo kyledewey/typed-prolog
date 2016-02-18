@@ -66,14 +66,21 @@ allImportedConstructors(LoadedModules, UsesModules, Constructors) :-
 
 % Assumes that all dependencies have been loaded in.
 clausedef(extractConstructors, [], [loadedModule, % module containing them
-                                     list(atom), % extract for these types
-                                     list(atom)]). % resulting constructors
+                                    list(atom),   % extract for these types
+                                    list(atom)]). % resulting constructors
 extractConstructors(loadedModule(_, _, _, LoadedFile),
-                     ImportedTypes, Constructors) :-
-        LoadedFile = loadedFile(defmodule(_, _, ExportedTypes), _, DataDefs, _, _, _),
+                    ImportedTypes, Constructors) :-
+        LoadedFile = loadedFile(defmodule(ModuleName, _, ExportedTypes), _, DataDefs, _, _, _),
 
         % ensure the module exports the types we want
-        forall(ImportedTypes, lambda([ImportedType], member(ImportedType, ExportedTypes))),
+        filter(ImportedTypes,
+               lambda([ImportedType], notMember(ImportedType, ExportedTypes)),
+               MissingTypes),
+        onFailure(
+                lambda([], MissingTypes = []),
+                lambda([],
+                       (yolo_UNSAFE_format_shim('Module ~w does not export the following types, which are imported elsewhere: ', [ModuleName]),
+                        yolo_UNSAFE_format_shim('~w~n', [MissingTypes])))),
 
         % get their corresponding data defs
         map(ImportedTypes,
@@ -271,9 +278,9 @@ makeRenaming(LoadedModules, loadedModule(_, LocalModuleId, UsesModules, LoadedFi
         append(LocalTypeRenaming, ExternalTypeRenaming, TypeRenaming),
         append(LocalConstructorRenaming, ExternalConstructorRenaming, ConstructorRenaming).
 
-clausedef(loadModule, [], [atom, % absolute filename
-                           list(loadedModule), % already loaded modules
-                           list(atom), % modules whose loading is in progress
+clausedef(loadModule, [], [atom,                 % absolute filename
+                           list(loadedModule),   % already loaded modules
+                           list(atom),           % modules whose loading is in progress
                            list(loadedModule)]). % newly loaded modules
 loadModule(FileName, AlreadyLoaded, InProgress, NewLoaded) :-
         % don't allow cyclic loading, which would put us in an infinite loop
