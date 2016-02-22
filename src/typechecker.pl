@@ -25,10 +25,6 @@ builtinClauseDefs(
          defclause(var, [A], [A]),
          defclause(nonvar, [A], [A]),
          defclause(ground, [A], [A]),
-         defclause(>, [], [intType, intType]),
-         defclause(<, [], [intType, intType]),
-         defclause(=<, [], [intType, intType]),
-         defclause(>=, [], [intType, intType]),
          defclause(@>, [A], [A, A]),
          defclause(@<, [A], [A, A]),
          defclause(@=<, [A], [A, A]),
@@ -36,12 +32,6 @@ builtinClauseDefs(
          defclause(=, [A], [A, A]),
          defclause(unify_with_occurs_check, [A], [A, A]),
          defclause(\=, [A], [A, A]),
-         defclause(#>, [], [intType, intType]),
-         defclause(#<, [], [intType, intType]),
-         defclause(#=<, [], [intType, intType]),
-         defclause(#>=, [], [intType, intType]),
-         defclause(#=, [], [intType, intType]),
-         defclause(#\=, [], [intType, intType]),
          defclause(fd_labeling, [], [constructorType(list, [intType])]),
          defclause(==, [A], [A, A]),
          defclause(\==, [A], [A, A]),
@@ -210,6 +200,10 @@ rawTypecheckBody(_, TypeEnv, body_is(Lhs, Exp), NewTypeEnv) :-
         !,
         typecheckLhs(TypeEnv, Lhs, TempTypeEnv), !,
         typecheckExp(TempTypeEnv, Exp, NewTypeEnv), !.
+rawTypecheckBody(_, TypeEnv, bodyComparison(Exp1, _, Exp2), NewTypeEnv) :-
+        !,
+        typecheckExp(TypeEnv, Exp1, TempTypeEnv), !,
+        typecheckExp(TempTypeEnv, Exp2, NewTypeEnv), !.
 rawTypecheckBody(State, TypeEnv, body_setvar(VarName, Term), NewTypeEnv) :-
         !,
         typecheckVarUse(State, TypeEnv, VarName, Term, NewTypeEnv), !.

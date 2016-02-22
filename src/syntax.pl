@@ -1,7 +1,8 @@
 module(syntax, [loadFile/2],
                [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                 typeConstructor, defdata, clauseclause, defglobalvar,
-                defmodule, def_use_module, loadedFile, bodyUnaryOp, unop]).
+                defmodule, def_use_module, loadedFile, bodyUnaryOp, unop,
+                compareOp]).
 
 use_module('io.pl', [read_clauses_from_file/3], []).
 use_module('common.pl', [map/3, forall/2, setContains/2, onFailure/2,
@@ -26,10 +27,14 @@ datadef(term, [], [term_var(int), term_num(int),
 
 datadef(bodyUnaryOp, [], [not]).
 datadef(bodyPairOp, [], [and, or, implies]).
+datadef(compareOp, [], [    lt,     lte,     gt,     gte,
+                        clp_lt, clp_lte, clp_gt, clp_gte,
+                        clp_eq, clp_neq]).
 datadef(body, [], [body_is(expLhs, exp),
                    body_setvar(atom, term), body_getvar(atom, term),
                    bodyUnary(bodyUnaryOp, body),
                    bodyPair(body, bodyPairOp, body),
+                   bodyComparison(exp, compareOp, exp),
                    higherOrderCall(term, list(term)),
                    firstOrderCall(atom, list(term))]).
 
@@ -138,6 +143,18 @@ yolo_UNSAFE_translate_body_pair_op(Op, implies) :- Op = '->', !.
 clausedef(yolo_UNSAFE_translate_unary_body_op, [A], [A, bodyUnaryOp]).
 yolo_UNSAFE_translate_unary_body_op(Op, not) :- Op = '\\+', !.
 
+clausedef(yolo_UNSAFE_translate_compare_op, [A], [A, compareOp]).
+yolo_UNSAFE_translate_compare_op(Op, lt) :- Op = '<', !.
+yolo_UNSAFE_translate_compare_op(Op, lte) :- Op = '=<', !.
+yolo_UNSAFE_translate_compare_op(Op, gt) :- Op = '>', !.
+yolo_UNSAFE_translate_compare_op(Op, gte) :- Op = '>=', !.
+yolo_UNSAFE_translate_compare_op(Op, clp_lt) :- Op = '#<', !.
+yolo_UNSAFE_translate_compare_op(Op, clp_lte) :- Op = '#=<', !.
+yolo_UNSAFE_translate_compare_op(Op, clp_gt) :- Op = '#>', !.
+yolo_UNSAFE_translate_compare_op(Op, clp_gte) :- Op = '#>=', !.
+yolo_UNSAFE_translate_compare_op(Op, clp_eq) :- Op = '#=', !.
+yolo_UNSAFE_translate_compare_op(Op, clp_neq) :- Op = '#\\=', !.
+
 clausedef(translateBody, [A], [A, body]).
 translateBody(Input, Output) :-
         onFailure(
@@ -150,6 +167,12 @@ yolo_UNSAFE_translate_body(Input, body_is(NewExpLhs, NewExp)) :-
         !,
         yolo_UNSAFE_translate_exp_lhs(ExpLhs, NewExpLhs),
         yolo_UNSAFE_translate_exp(Exp, NewExp).
+yolo_UNSAFE_translate_body(Input, bodyComparison(NewExp1, CompareOp, NewExp2)) :-
+        Input =.. [Op, Exp1, Exp2],
+        yolo_UNSAFE_translate_compare_op(Op, CompareOp),
+        !,
+        yolo_UNSAFE_translate_exp(Exp1, NewExp1),
+        yolo_UNSAFE_translate_exp(Exp2, NewExp2).
 yolo_UNSAFE_translate_body(Input, body_setvar(VarName, NewTerm)) :-
         Input = setvar(VarName, Term),
         !,

@@ -3,12 +3,12 @@ module(translator, [translateClauses/3], [engine_type]).
 use_module('common.pl', [setUnion/3, setDifference/3, filter/3, setContains/2,
                          makeSetFromList/2, map/3, foldLeft/4, sortItems/4,
                          flatMap/3, beginsWith/2, makeSetFromList/2, notMember/2,
-                         find/3, setsOverlap/2],
+                         setsOverlap/2, existsOnce/2],
                         [pair, option]).
 use_module('syntax.pl', [],
                         [op, exp, expLhs, term, body, type, defclause,
                          typeConstructor, defdata, clauseclause, defglobalvar,
-                         defmodule, def_use_module, loadedFile]).
+                         defmodule, def_use_module, loadedFile, compareOp]).
 
 datadef(engine_type, [], [swipl, gnuprolog]).
 
@@ -110,6 +110,11 @@ translateBody(SeenVars,
         getvar(engine, Engine),
         engineGetVarName(Engine, VarGetName),
         translateTerm(SeenVars, Term, Used, NewTerm, Defs1, DefsFinal).
+translateBody(_, BodyComparison, Used, BodyComparison, Defs, Defs) :-
+        BodyComparison = bodyComparison(_, _, _),
+        !,
+        % merely record which variables were used
+        yolo_UNSAFE_term_variables(BodyComparison, Used).
 translateBody(SeenVars,
               bodyUnary(Op, Body), Used,
               bodyUnary(Op, NewBody),
@@ -225,6 +230,7 @@ clausedef(bodyDirectlyCalls, [], [body, % the body to check
 bodyDirectlyCalls(body_is(_, _), List, List).
 bodyDirectlyCalls(body_setvar(_, _), List, List).
 bodyDirectlyCalls(body_getvar(_, _), List, List).
+bodyDirectlyCalls(bodyComparison(_, _, _), List, List).
 bodyDirectlyCalls(bodyUnary(_, Body), Input, Output) :-
         bodyDirectlyCalls(Body, Input, Output).
 bodyDirectlyCalls(bodyPair(Body1, _, Body2), Input, Output) :-
@@ -244,12 +250,10 @@ clauseNameArity(clauseclause(Name, Params, _), Name, Arity) :-
 clausedef(callsUnknownLambda, [], [list(pair(atom, int)), % what is called
                                    list(atom)]). % existing lambdas
 callsUnknownLambda(CalledClauses, ExistingLambdas) :-
-        find(CalledClauses,
-             lambda([pair(Name, _)],
-                    (isCallLambda(Name),
-                     notMember(Name, ExistingLambdas))),
-             some(_)),
-        !.
+        existsOnce(CalledClauses,
+                   lambda([pair(Name, _)],
+                          (isCallLambda(Name),
+                           notMember(Name, ExistingLambdas)))).
 
 clausedef(trimDeadClauses, [], [list(clauseclause), % input clauses
                                 list(pair(pair(atom, int), list(pair(atom, int)))), % called mapping
@@ -288,46 +292,40 @@ clauseCallsMapping(InputClauses, Mapping) :-
                     bodyDirectlyCalls(Body, ClauseMapping))),
             Mapping).
 
-clausedef(clpClauseName, [], [atom]).
-clpClauseName(#>).
-clpClauseName(#<).
-clpClauseName(#=<).
-clpClauseName(#>=).
-clpClauseName(#=).
-clpClauseName(#\=).
-
-clausedef(clpClause, [], [pair(atom, int)]).
-clpClause(pair(Name, 2)) :-
-        clpClauseName(Name).
-
-% succeeds if a CLP constraint is used
-clausedef(clpUsed, [], [list(pair(pair(atom, int), list(pair(atom, int))))]).
-clpUsed(Mapping) :-
-        find(Mapping,
-             lambda([pair(_, ThisCalls)],
-                    find(ThisCalls,
-                         lambda([Pair], clpClause(Pair)),
-                         some(_))),
-             some(_)),
-        !.
-
 clausedef(makeDirective, [], [term, clauseclause]).
 makeDirective(Term, clauseclause(':-', [Term], firstOrderCall('true', []))).
 
-clausedef(handleClp, [], [list(pair(pair(atom, int), list(pair(atom, int)))),
-                          engine_type,
+clausedef(clpOperator, [], [compareOp]).
+clpOperator(clp_lt).
+clpOperator(clp_lte).
+clpOperator(clp_gt).
+clpOperator(clp_gte).
+clpOperator(clp_eq).
+clpOperator(clp_neq).
+
+clausedef(bodyUsesClp, [], [body]).
+bodyUsesClp(bodyUnary(_, Body)) :-
+    bodyUsesClp(Body).
+bodyUsesClp(bodyPair(Body1, _, Body2)) :-
+    (bodyUsesClp(Body1); bodyUsesClp(Body2)),
+    !.
+bodyUsesClp(bodyComparison(_, Op, _)) :-
+    clpOperator(Op).
+
+clausedef(handleClp, [], [engine_type,
                           list(clauseclause),
                           list(clauseclause)]).
-handleClp(Mapping, swipl, InputClauses, OutputClauses) :-
-        (clpUsed(Mapping) ->
-            (makeDirective(
+handleClp(swipl, InputClauses, OutputClauses) :-
+    (existsOnce(InputClauses,
+                lambda([clauseclause(_, _, Body)], bodyUsesClp(Body))) ->
+         (makeDirective(
                 term_constructor('use_module',
                                  [term_constructor('library',
                                                    [term_constructor('clpfd', [])])]),
                 UseClpfd),
-             OutputClauses = [UseClpfd|InputClauses]);
-            (InputClauses = OutputClauses)).
-handleClp(_, gnuprolog, Clauses, Clauses).
+          OutputClauses = [UseClpfd|InputClauses]);
+         (InputClauses = OutputClauses)).
+handleClp(gnuprolog, Clauses, Clauses).
 
 % Currently, everything could be an entry point, so this is very inexact.
 % If we see a call to a lambda clause that doesn't exist, then we trim
@@ -368,4 +366,4 @@ translateClauses(Clauses, Engine, FinalClauses) :-
         append(SortedAuxClauses, UserClauses, UntrimmedClauses),
         clauseCallsMapping(UntrimmedClauses, Mapping),
         trimDeadClauses(Mapping, UntrimmedClauses, TrimmedClauses),
-        handleClp(Mapping, Engine, TrimmedClauses, FinalClauses).
+        handleClp(Engine, TrimmedClauses, FinalClauses).

@@ -184,9 +184,9 @@ renamedGlobalVariable(renaming(_, _, _, Mapping), OldName, NewName) :-
 renamedGlobalVariable(_, Name, Name).
 
 datadef(renaming, [], [renaming(list(pair(pair(atom, int), atom)), % for clauses
-                                list(pair(atom, atom)), % for types
-                                list(pair(atom, atom)), % for constructors
-                                list(pair(atom, atom)))]). % for global variables
+                                list(pair(atom, atom)),            % for types
+                                list(pair(atom, atom)),            % for constructors
+                                list(pair(atom, atom)))]).         % for global variables
 % assumes that there are no duplicates
 clausedef(makeRenaming, [], [list(loadedModule), % all loaded modules
                              loadedModule,
@@ -300,6 +300,7 @@ translateVarUse(Renaming, VarUsed, Term, NewVarUsed, NewTerm) :-
 
 clausedef(translateBody, [], [renaming, body, body]).
 translateBody(_, body_is(Lhs, Exp), body_is(Lhs, Exp)).
+translateBody(_, bodyComparison(Exp1, Op, Exp2), bodyComparison(Exp1, Op, Exp2)).
 translateBody(Renaming, body_setvar(VarName, Term), body_setvar(NewVarName, NewTerm)) :-
         translateVarUse(Renaming, VarName, Term, NewVarName, NewTerm).
 translateBody(Renaming, body_getvar(VarName, Term), body_getvar(NewVarName, NewTerm)) :-

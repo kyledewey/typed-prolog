@@ -4,7 +4,8 @@ use_module('common.pl', [map/3], []).
 use_module('syntax.pl', [],
                         [op, exp, expLhs, term, bodyPairOp, body, type, defclause,
                          typeConstructor, defdata, clauseclause, defglobalvar,
-                         defmodule, def_use_module, loadedFile, bodyUnaryOp, unop]).
+                         defmodule, def_use_module, loadedFile, bodyUnaryOp, unop,
+                         compareOp]).
 use_module('io.pl', [writeClauses/2], []).
 
 % Handles writing to files.  Assumes that translation has already occurred, so that
@@ -28,6 +29,18 @@ translateOp(int_div, '//').
 translateOp(int_rem, 'rem').
 translateOp(int_mod, 'mod').
 translateOp(op_exponent, '^').
+
+clausedef(translateCompareOp, [], [compareOp, atom]).
+translateCompareOp(lt, '<').
+translateCompareOp(lte, '=<').
+translateCompareOp(gt, '>').
+translateCompareOp(gte, '>=').
+translateCompareOp(clp_lt, '#<').
+translateCompareOp(clp_lte, '#=<').
+translateCompareOp(clp_gt, '#>').
+translateCompareOp(clp_gte, '#>=').
+translateCompareOp(clp_eq, '#=').
+translateCompareOp(clp_neq, '#\\=').
 
 clausedef(translateUnop, [], [unop, atom]).
 translateUnop(op_msb, msb).
@@ -77,6 +90,11 @@ yolo_UNSAFE_translate_body(body_is(Lhs, Exp), Result) :-
         yolo_UNSAFE_translate_exp_lhs(Lhs, NewLhs),
         yolo_UNSAFE_translate_exp(Exp, NewExp),
         Result =.. [is, NewLhs, NewExp].
+yolo_UNSAFE_translate_body(bodyComparison(Exp1, Op, Exp2), Result) :-
+    yolo_UNSAFE_translate_exp(Exp1, NewExp1),
+    yolo_UNSAFE_translate_exp(Exp2, NewExp2),
+    translateCompareOp(Op, AtomOp),
+    Result =.. [AtomOp, NewExp1, NewExp2].
 % setvar and getvar has been translated away
 yolo_UNSAFE_translate_body(bodyUnary(Op, Body), Result) :-
         translateBodyUnaryOp(Op, NewOp),
