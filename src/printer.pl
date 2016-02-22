@@ -26,6 +26,8 @@ translateOp(bitwise_and, '/\\').
 translateOp(bitwise_or, '\\/').
 translateOp(int_div, '//').
 translateOp(int_rem, 'rem').
+translateOp(int_mod, 'mod').
+translateOp(op_exponent, '^').
 
 clausedef(translateUnop, [], [unop, atom]).
 translateUnop(op_msb, msb).

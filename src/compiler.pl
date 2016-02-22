@@ -114,6 +114,8 @@ private_6_translateOp(public_2_bitwise_and,/\).
 private_6_translateOp(public_2_bitwise_or,\/).
 private_6_translateOp(public_2_int_div,//).
 private_6_translateOp(public_2_int_rem,rem).
+private_6_translateOp(public_2_int_mod,mod).
+private_6_translateOp(public_2_op_exponent,^).
 private_6_translateUnop(public_2_op_msb,msb).
 private_6_translateUnop(public_2_op_abs,abs).
 private_6_translateBodyUnaryOp(public_2_not,\+).
@@ -285,6 +287,8 @@ private_2_yolo_UNSAFE_translate_op(A,public_2_bitwise_and):-A= (/\),!.
 private_2_yolo_UNSAFE_translate_op(A,public_2_bitwise_or):-A= (\/),!.
 private_2_yolo_UNSAFE_translate_op(A,public_2_int_div):-A= (//),!.
 private_2_yolo_UNSAFE_translate_op(A,public_2_int_rem):-A= (rem),!.
+private_2_yolo_UNSAFE_translate_op(A,public_2_int_mod):-A= (mod),!.
+private_2_yolo_UNSAFE_translate_op(A,public_2_op_exponent):-A= (^),!.
 private_2_yolo_UNSAFE_translate_unop(A,public_2_op_msb):-A=msb,!.
 private_2_yolo_UNSAFE_translate_unop(A,public_2_op_abs):-A=abs,!.
 private_2_yolo_UNSAFE_translate_exp(A,public_2_exp_var(B)):-var(A),!,A=B.
