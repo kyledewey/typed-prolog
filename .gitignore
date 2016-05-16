@@ -1,2 +1,6 @@
+# Emacs temp files
 *~
 \#*\#
+
+# compiled code
+output.pl
