@@ -45,6 +45,7 @@ translateCompareOp(clp_neq, '#\\=').
 clausedef(translateUnop, [], [unop, atom]).
 translateUnop(op_msb, msb).
 translateUnop(op_abs, abs).
+translateUnop(op_truncate, truncate).
 
 clausedef(translateBodyUnaryOp, [], [bodyUnaryOp, atom]).
 translateBodyUnaryOp(not, '\\+').

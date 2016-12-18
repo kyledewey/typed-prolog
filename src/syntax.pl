@@ -15,7 +15,7 @@ datadef(op, [], [plus, minus, mul, div, op_min, op_max,
                  shift_left, shift_right, bitwise_and, bitwise_or,
                  int_div, int_rem,
                  int_mod, op_exponent]).
-datadef(unop, [], [op_msb, op_abs]).
+datadef(unop, [], [op_msb, op_abs, op_truncate]).
 datadef(exp, [], [exp_var(int),
                   exp_num(int),
                   binop(exp, op, exp),
@@ -113,6 +113,7 @@ yolo_UNSAFE_translate_op(Op, op_exponent) :- Op = '^', !.
 clausedef(yolo_UNSAFE_translate_unop, [A], [A, unop]).
 yolo_UNSAFE_translate_unop(Op, op_msb) :- Op = msb, !.
 yolo_UNSAFE_translate_unop(Op, op_abs) :- Op = abs, !.
+yolo_UNSAFE_translate_unop(Op, op_truncate) :- Op = truncate, !.
 
 clausedef(yolo_UNSAFE_translate_exp, [A], [A, exp]).
 yolo_UNSAFE_translate_exp(Var, exp_var(NewVar)) :-
