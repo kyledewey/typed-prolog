@@ -44,7 +44,8 @@ builtinClauseDefs(
                                  constructorType(list, [A])]),
          defclause(length, [A], [constructorType(list, [A]), intType]),
          defclause(atom_codes, [], [atomType, constructorType(list, [intType])]),
-         defclause(atom_number, [], [atomType, intType])
+         defclause(atom_number, [], [atomType, intType]),
+         defclause(atom_concat, [], [atomType, atomType, atomType])
         ]).
 
 clausedef(keys, [A, B], [list(pair(A, B)), list(A)]).
