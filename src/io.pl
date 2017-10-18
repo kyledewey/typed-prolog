@@ -53,7 +53,7 @@ yolo_UNSAFE_write_clause(Clause, stream(Stream)) :-
         copy_term(Clause, Copy),
         numbervars(Copy, 0, _, [singletons(true)]),
         write_term(Stream, Copy, [numbervars(true), quoted(true)]),
-        format(Stream, '.~n', []).
+        format(Stream, ' .~n', []).
 
 clausedef(writeClauses, [A], [list(A), atom]).
 writeClauses(Clauses, Filename) :-

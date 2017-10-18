@@ -374,7 +374,7 @@ private_1_withOpenStream(A,B,C):-private_1_yolo_UNSAFE_open_file(A,B,D), (call_l
 private_1_yolo_UNSAFE_read_clause(private_1_stream(A),D,C):-read_clause(A,B,[]), (B==end_of_file->C=public_0_none;call_lambda2(D,B,E),C=public_0_some(E)).
 private_1_read_clauses_from_stream(B,C,D):-A=lambda1_83(A,B,C),call_lambda1(A,D).
 public_1_read_clauses_from_file(A,B,C):-private_1_withOpenStream(A,private_1_read_mode,lambda1_84(B,C)).
-private_1_yolo_UNSAFE_write_clause(A,private_1_stream(C)):-copy_term(A,B),numbervars(B,0,_,[singletons(true)]),write_term(C,B,[numbervars(true),quoted(true)]),format(C,'.~n',[]).
+private_1_yolo_UNSAFE_write_clause(A,private_1_stream(C)):-copy_term(A,B),numbervars(B,0,_,[singletons(true)]),write_term(C,B,[numbervars(true),quoted(true)]),format(C,' .~n',[]).
 public_1_writeClauses(B,A):-private_1_withOpenStream(A,private_1_write_mode,lambda1_86(B)).
 public_0_map([],_,[]).
 public_0_map([B|D],A,[C|E]):-call_lambda2(A,B,C),public_0_map(D,A,E).
